@@ -1,0 +1,62 @@
+#!/usr/bin/sudo bash
+
+BITEY=/usr/bitey
+
+if [[ "$1" == "install" ]]; then
+    REMOTE_NAME="$3"
+    SOFTWARE_NAME="$4"
+    REMOTE_ADDON="$BITEY/addons/remote-$REMOTE_NAME"
+    INSTALL_PATH="$BITEY/software/$SOFTWARE_NAME"
+
+    if [[ ! -f "$REMOTE_ADDON/remote.sh" ]]; then
+        echo "Remote '$REMOTE_NAME' not found or invalid."
+        exit 1
+    fi
+
+    source "$REMOTE_ADDON/remote.sh"
+
+    if [[ -z "$REMOTE" ]]; then
+        echo "REMOTE variable not set in $REMOTE_ADDON/remote.sh."
+        exit 1
+    fi
+
+    echo "Installing $SOFTWARE_NAME."
+    sudo git clone "$REMOTE/$SOFTWARE_NAME" "$INSTALL_PATH" || {
+        echo "Installation failure."
+        exit 1
+    }
+
+    cd "$INSTALL_PATH" || exit 1
+
+    if [[ ! -f project/paths.txt ]]; then
+        echo "Installation invalid."
+        rm -rf "$INSTALL_PATH"
+        exit 1
+    fi
+
+    DEPENDS_FILE="project/depends.txt"
+    if [[ -f "$DEPENDS_FILE" ]]; then
+        source "$DEPENDS_FILE"
+        for dep in "${DEPENDS[@]}"; do
+            sudo bitey install $dep
+        done
+    fi
+
+    sudo bash "project/install.sh"
+    echo "$INSTALL_DIR" | sudo tee -a $BITEY/project/bitey_paths
+    echo "$INSTALL_DIR/bin" | sudo tee -a $BITEY/project/biteyrc
+
+    cd - > /dev/null
+    exit 0
+fi
+
+if [[ "$1" == "update" ]]; then
+    mapfile -t BITEY_PATHS < $BITEY/project/bitey_paths
+    for path in "${BITEY_PATHS[@]}"; do
+        if [ -d "$path" ]; then
+            cd "$path" || continue
+            sudo git pull
+            cd - > /dev/null || exit 0
+        fi
+    done
+fi
