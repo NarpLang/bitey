@@ -43,9 +43,9 @@ if [[ "$1" == "install" ]]; then
     fi
 
     sudo bash "project/install.sh"
-    sudo chmod +x $INSTALL_DIR/bin
-    echo "$INSTALL_DIR" | sudo tee -a $BITEY/project/bitey_paths
-    echo "$INSTALL_DIR/bin" | sudo tee -a $BITEY/project/biteyrc
+    sudo chmod +x "$INSTALL_PATH/bin/*"
+    echo "$INSTALL_PATH" | sudo tee -a $BITEY/project/bitey_paths
+    echo "$INSTALL_PATH/bin" | sudo tee -a $BITEY/project/biteyrc
 
     cd - > /dev/null
     exit 0
