@@ -1,3 +1,3 @@
 ![LOGO](/media/bitey-logo.png)
-# Bitey
+# 🍫 Bitey
 **A full package manager**
