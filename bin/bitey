@@ -58,6 +58,7 @@ if [[ "$1" == "update" ]]; then
             cd "$path" || continue
             sudo git reset --hard HEAD
             sudo git pull
+            sudo chmod +x bin/*
             cd - > /dev/null || exit 0
         fi
     done
