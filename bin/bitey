@@ -3,8 +3,8 @@
 BITEY=/usr/bitey
 
 if [[ "$1" == "install" ]]; then
-    REMOTE_NAME="$3"
-    SOFTWARE_NAME="$4"
+    REMOTE_NAME="$2"
+    SOFTWARE_NAME="$3"
     REMOTE_ADDON="$BITEY/addons/remote-$REMOTE_NAME"
     INSTALL_PATH="$BITEY/software/$SOFTWARE_NAME"
 
