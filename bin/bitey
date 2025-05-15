@@ -27,7 +27,7 @@ if [[ "$1" == "install" ]]; then
             continue
         fi
 
-        echo "Installing $SOFTWARE_NAME."
+        echo "📦 Installing $SOFTWARE_NAME."
         sudo git clone "$REMOTE/$SOFTWARE_NAME" "$INSTALL_PATH" || {
             echo "❌ Installation failure."
             exit 1
