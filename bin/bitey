@@ -107,4 +107,5 @@ if [[ "$1" == "update" ]]; then
             cd - > /dev/null || exit 0
         fi
     done
+    echo "$BITEY_PATHS" > "$BITEY/project/bitey_paths" 
 fi
