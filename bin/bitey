@@ -4,52 +4,57 @@ BITEY=/usr/bitey
 
 if [[ "$1" == "install" ]]; then
     REMOTE_NAME="$2"
-    SOFTWARE_NAME="$3"
-    REMOTE_ADDON="$BITEY/addons/remote-$REMOTE_NAME"
-    INSTALL_PATH="$BITEY/software/$SOFTWARE_NAME"
+    shift 2  # Remove the first two args (install + remote)
 
-    if [[ ! -f "$REMOTE_ADDON/remote.sh" ]]; then
-        echo "Remote '$REMOTE_NAME' not found or invalid."
-        exit 1
-    fi
+    for SOFTWARE_NAME in "$@"; do
+        REMOTE_ADDON="$BITEY/addons/remote-$REMOTE_NAME"
+        INSTALL_PATH="$BITEY/software/$SOFTWARE_NAME"
 
-    source "$REMOTE_ADDON/remote.sh"
+        if [[ ! -f "$REMOTE_ADDON/remote.sh" ]]; then
+            echo "Remote '$REMOTE_NAME' not found or invalid."
+            exit 1
+        fi
 
-    if [[ -z "$REMOTE" ]]; then
-        echo "REMOTE variable not set in $REMOTE_ADDON/remote.sh."
-        exit 1
-    fi
+        source "$REMOTE_ADDON/remote.sh"
 
-    echo "Installing $SOFTWARE_NAME."
-    sudo git clone "$REMOTE/$SOFTWARE_NAME" "$INSTALL_PATH" || {
-        echo "Installation failure."
-        exit 1
-    }
+        if [[ -z "$REMOTE" ]]; then
+            echo "REMOTE variable not set in $REMOTE_ADDON/remote.sh."
+            exit 1
+        fi
 
-    cd "$INSTALL_PATH" || exit 1
+        echo "Installing $SOFTWARE_NAME."
+        sudo git clone "$REMOTE/$SOFTWARE_NAME" "$INSTALL_PATH" || {
+            echo "Installation failure."
+            exit 1
+        }
 
-    if [[ ! -f project/paths.txt ]]; then
-        echo "Installation invalid."
-        rm -rf "$INSTALL_PATH"
-        exit 1
-    fi
+        cd "$INSTALL_PATH" || exit 1
 
-    DEPENDS_FILE="project/depends.txt"
-    if [[ -f "$DEPENDS_FILE" ]]; then
-        source "$DEPENDS_FILE"
-        for dep in "${DEPENDS[@]}"; do
-            sudo bitey install $dep
-        done
-    fi
+        if [[ ! -f project/paths.txt ]]; then
+            echo "Installation invalid."
+            rm -rf "$INSTALL_PATH"
+            exit 1
+        fi
 
-    sudo bash "project/install.sh"
-    sudo chmod +x "$INSTALL_PATH/bin/*"
-    echo "$INSTALL_PATH" | sudo tee -a $BITEY/project/bitey_paths
-    echo "$INSTALL_PATH/bin" | sudo tee -a $BITEY/project/biteyrc
+        DEPENDS_FILE="project/depends.txt"
+        if [[ -f "$DEPENDS_FILE" ]]; then
+            source "$DEPENDS_FILE"
+            for dep in "${DEPENDS[@]}"; do
+                sudo bitey install "$dep"
+            done
+        fi
 
-    cd - > /dev/null
+        sudo bash "project/install.sh"
+        sudo chmod +x "$INSTALL_PATH/bin/"*
+        echo "$INSTALL_PATH" | sudo tee -a "$BITEY/project/bitey_paths"
+        echo "$INSTALL_PATH/bin" | sudo tee -a "$BITEY/project/biteyrc"
+
+        cd - > /dev/null
+    done
+
     exit 0
 fi
+
 
 if [[ "$1" == "update" ]]; then
     mapfile -t BITEY_PATHS < $BITEY/project/bitey_paths
