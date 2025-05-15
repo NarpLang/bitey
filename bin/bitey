@@ -22,6 +22,11 @@ if [[ "$1" == "install" ]]; then
             exit 1
         fi
 
+        if [[ -d "$INSTALL_PATH" ]]; then
+            echo "$SOFTWARE_NAME is already installed at $INSTALL_PATH. Skipping..."
+            continue
+        fi
+
         echo "Installing $SOFTWARE_NAME."
         sudo git clone "$REMOTE/$SOFTWARE_NAME" "$INSTALL_PATH" || {
             echo "Installation failure."
