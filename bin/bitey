@@ -11,32 +11,32 @@ if [[ "$1" == "install" ]]; then
         INSTALL_PATH="$BITEY/software/$SOFTWARE_NAME"
 
         if [[ ! -f "$REMOTE_ADDON/remote.sh" ]]; then
-            echo "Remote '$REMOTE_NAME' not found or invalid."
+            echo "❌ Remote '$REMOTE_NAME' not found or invalid."
             exit 1
         fi
 
         source "$REMOTE_ADDON/remote.sh"
 
         if [[ -z "$REMOTE" ]]; then
-            echo "REMOTE variable not set in $REMOTE_ADDON/remote.sh."
+            echo "❌ REMOTE variable not set in $REMOTE_ADDON/remote.sh."
             exit 1
         fi
 
         if [[ -d "$INSTALL_PATH" ]]; then
-            echo "$SOFTWARE_NAME is already installed at $INSTALL_PATH. Skipping..."
+            echo "⚠️ $SOFTWARE_NAME is already installed at $INSTALL_PATH. Skipping..."
             continue
         fi
 
         echo "Installing $SOFTWARE_NAME."
         sudo git clone "$REMOTE/$SOFTWARE_NAME" "$INSTALL_PATH" || {
-            echo "Installation failure."
+            echo "❌ Installation failure."
             exit 1
         }
 
         cd "$INSTALL_PATH" || exit 1
 
         if [[ ! -f project/paths.txt ]]; then
-            echo "Installation invalid."
+            echo "❌ Installation invalid."
             rm -rf "$INSTALL_PATH"
             exit 1
         fi
@@ -45,6 +45,7 @@ if [[ "$1" == "install" ]]; then
         if [[ -f "$DEPENDS_FILE" ]]; then
             source "$DEPENDS_FILE"
             for dep in "${DEPENDS[@]}"; do
+                echo "📦 Installing dependency $dep..."
                 sudo bitey install "$dep"
             done
         fi
@@ -60,6 +61,39 @@ if [[ "$1" == "install" ]]; then
     exit 0
 fi
 
+if [[ "$1" == "remove" ]]; then
+    shift 1  # Remove "remove" argument
+
+    for SOFTWARE_NAME in "$@"; do
+        INSTALL_PATH="$BITEY/software/$SOFTWARE_NAME"
+
+        if [[ ! -d "$INSTALL_PATH" ]]; then
+            echo "❌ $SOFTWARE_NAME is not installed."
+            continue
+        fi
+
+        cd "$INSTALL_PATH" || continue
+
+        if [[ -f project/remove.sh ]]; then
+            echo "🔧 Running remove script for $SOFTWARE_NAME..."
+            sudo bash "project/remove.sh"
+        else
+            echo "⚠️ No remove script found, continuing with raw removal."
+        fi
+
+        echo "🗑️ Removing $SOFTWARE_NAME..."
+        sudo rm -rf "$INSTALL_PATH"
+
+        # Clean bitey_paths and biteyrc
+        sudo sed -i "\|$INSTALL_PATH\$|d" "$BITEY/project/bitey_paths"
+        sudo sed -i "\|$INSTALL_PATH/bin\$|d" "$BITEY/project/biteyrc"
+
+        echo "✅ Removed $SOFTWARE_NAME."
+        cd - > /dev/null
+    done
+
+    exit 0
+fi
 
 if [[ "$1" == "update" ]]; then
     mapfile -t BITEY_PATHS < $BITEY/project/bitey_paths
