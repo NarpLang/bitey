@@ -96,6 +96,7 @@ if [[ "$1" == "remove" ]]; then
 fi
 
 if [[ "$1" == "update" ]]; then
+    mapfile -t BITEYRC < $BITEY/project/biteyrc
     mapfile -t BITEY_PATHS < $BITEY/project/bitey_paths
     for path in "${BITEY_PATHS[@]}"; do
         if [ -d "$path" ]; then
@@ -108,4 +109,5 @@ if [[ "$1" == "update" ]]; then
         fi
     done
     printf "%s\n" "${BITEY_PATHS[@]}" | sudo tee "$BITEY/project/bitey_paths" > /dev/null
+    printf "%s\n" "${BITEYRC[@]}" | sudo tee "$BITEY/project/biteyrc" > /dev/null
 fi
