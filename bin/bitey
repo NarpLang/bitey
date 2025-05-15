@@ -101,10 +101,15 @@ if [[ "$1" == "update" ]]; then
     for path in "${BITEY_PATHS[@]}"; do
         if [ -d "$path" ]; then
             cd "$path" || continue
+            
             echo "🔄 Updating path $path..."
             sudo git reset --hard HEAD
             sudo git pull
             sudo chmod +x bin/*
+            if [[ -f project/update.sh ]]; then
+                echo "🔧 Running update script..."
+                sudo bash "project/update.sh"
+            fi
             cd - > /dev/null || exit 0
         fi
     done
