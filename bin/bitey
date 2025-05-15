@@ -107,5 +107,5 @@ if [[ "$1" == "update" ]]; then
             cd - > /dev/null || exit 0
         fi
     done
-    echo "$BITEY_PATHS" | sudo tee "$BITEY/project/bitey_paths" > /dev/null
+    printf "%s\n" "${BITEY_PATHS[@]}" | sudo tee "$BITEY/project/bitey_paths" > /dev/null
 fi
