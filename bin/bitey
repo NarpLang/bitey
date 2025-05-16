@@ -187,7 +187,7 @@ if [[ "$1" == "--help" ]]; then
     echo "    clear - Clear the Shell."
     echo "    history - Read your history."
     echo "    help - See the help message."
-    echo "    version - Check the version of your Bitey installation.
+    echo "    version - Check the version of your Bitey installation."
     echo "🔐 Lock:"
     echo "    lock - Lock Bitey."
     echo "    unlock - Unlock Bitey."
@@ -438,7 +438,7 @@ bitey_shell() {
     esac
   done
 }
-"
+
 if [[ "$1" == "shell" ]]; then
     bitey_shell
     exit 0
