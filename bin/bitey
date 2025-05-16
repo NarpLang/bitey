@@ -433,7 +433,7 @@ bitey_shell() {
         continue
         ;;
       *)
-        sudo bitey $cmd; :
+        sudo bitey $cmd || true
         ;;
     esac
   done
