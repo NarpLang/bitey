@@ -282,7 +282,7 @@ if [[ "$1" == "doctor" ]]; then
 
     # Missing pak.conf check
     MISSING=0
-    for pkg in "$BITEY/packages/"*; do
+    for pkg in "$BITEY/software/"*; do
         [[ -d "$pkg" ]] || continue
         if [[ ! -f "$pkg/pak.conf" ]]; then
             echo "📑 Missing pak.conf:   ❌ $(basename "$pkg")"
