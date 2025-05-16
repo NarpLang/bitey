@@ -297,11 +297,11 @@ if [[ "$1" == "doctor" ]]; then
 
     # Permission check
     if [[ "$(id -u)" -eq 0 ]]; then
-        echo "🔧 Write access:        ✅ Safe (running as root)"
+        echo "🔧 Data access:        ✅ Safe (running as root)"
     elif [[ -w "$BITEY" ]]; then
-        echo "🔧 Write access:        ⚠️ Writable but not root (use caution)"
+        echo "🔧 Data access:        ⚠️ Unsafe (use caution)"
     else
-        echo "🔧 Write access:        ❌ Unsafe (no write access)"
+        echo "🔧 Data access:        ❌ None (no write access)"
     fi
 
 
