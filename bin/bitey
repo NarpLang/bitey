@@ -169,37 +169,33 @@ if [[ $# -eq 0 ]]; then
     exit 0
 fi
 
-HELP_MSG="$(cat <<EOF
-🐶 Hi, it's Bitzy! I wrote down some commands you need to know down here!
-💡 Bitey Help
-➡️ Usage: $0 [OPTIONS]
-
-📦 Packages:
-    install <remote> <package> - Install a package.
-    remove <package> - Remove a package.
-    list - List installed packages.
-    update - Update all packages.
-    info <package> - See the package information.
-🐚 Shell:
-    shell - Open a Bitey Shell session.
-🔐 Lock:
-    lock - Lock Bitey.
-    unlock - Unlock Bitey.
-💿 Installation:
-    doctor - Analyze your installation of Bitey.
-    repair - Repair your installation of Bitey.
-    --version - Check the version of your Bitey Installation.
-❓ Help:
-    --help - See the help message.
-
-🐾 Tip: Use the Bitey Shell (run `bitey shell`) to manage everything faster!
-EOF
-)"
-
 if [[ "$1" == "--help" ]]; then
-    echo "$HELP_MSG"
+    echo "🐶 Hi, it's Bitzy! I wrote down some commands you need to know down here!"
+    echo "💡 Bitey Help"
+    echo "➡️ Usage: $0 [OPTIONS]"
+    echo
+    echo "📦 Packages:"
+    echo "    install <remote> <package> - Install a package."
+    echo "    remove <package> - Remove a package."
+    echo "    list - List installed packages."
+    echo "    update - Update all packages."
+    echo "    info <package> - See the package information."
+    echo "🐚 Shell:"
+    echo "    shell - Open a Bitey Shell session."
+    echo "🔐 Lock:"
+    echo "    lock - Lock Bitey."
+    echo "    unlock - Unlock Bitey."
+    echo "💿 Installation:"
+    echo "    doctor - Analyze your installation of Bitey."
+    echo "    repair - Repair your installation of Bitey."
+    echo "    --version - Check the version of your Bitey Installation."
+    echo "❓ Help:"
+    echo "    --help - See the help message."
+    echo
+    echo "🐾 Tip: Use the Bitey Shell (run \`bitey shell\`) to manage everything faster!"
     exit 0
 fi
+
 
 
 if [[ "$1" == "--version" ]]; then
