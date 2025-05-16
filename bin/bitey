@@ -118,7 +118,7 @@ if [[ "$1" == "remove" ]]; then
 fi
 
 if [[ "$1" == "update" ]]; then
-    if [[ -f "$BITEY/lock" ]]; then
+    if [[ -f "$BITEY/lock" && -z "$BITEY_FORCE_UNLOCK" ]]; then
         echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
         exit 1
     fi
@@ -334,7 +334,8 @@ if [[ "$1" == "repair" ]]; then
     sudo touch "$BITEY/lock"
 
     echo "🔄 Updating packages to fix real ones..."
-    sudo bitey update
+    BITEY_FORCE_UNLOCK=1 sudo bitey update
+    sudo bitey lock
 
     echo "🧹 Cleaning up fake/broken packages..."
     for pkg in "$BITEY/packages/"*; do
