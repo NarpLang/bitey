@@ -1,7 +1,7 @@
 #!/usr/bin/sudo bash
 set -e
 
-VERSION=1.6
+VERSION=1.7
 
 BITEY=/usr/bitey
 
@@ -279,6 +279,21 @@ if [[ "$1" == "doctor" ]]; then
         fi
     done
     [[ $BROKEN_PKGS -eq 0 ]] && echo "🧩 Broken packages:    ✅ None"
+
+    # Missing pak.conf check
+    MISSING=0
+    for pkg in "$BITEY/packages/"*; do
+        [[ -d "$pkg" ]] || continue
+        if [[ ! -f "$pkg/pak.conf" ]]; then
+            echo "📑 Missing pak.conf:   ❌ $(basename "$pkg")"
+            MISSING=1
+        fi
+    done
+    [[ $MISSING -eq 0 ]] && echo "📑 Missing pak.conf:   ✅ All present"
+
+    # Disk usage
+    USAGE=$(du -sh "$BITEY" 2>/dev/null | cut -f1)
+    echo "📁 Disk usage:         💾 $USAGE used by Bitey"
 
     # Remotes
     if [[ -d "$BITEY/addons" ]]; then
