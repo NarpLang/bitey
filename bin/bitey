@@ -390,9 +390,6 @@ bitey_shell() {
       clear)
         clear
         ;;
-      r)
-        break && bitey shell
-        ;;
       "")
         continue
         ;;
