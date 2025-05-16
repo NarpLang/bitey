@@ -379,7 +379,7 @@ if [[ "$1" == "repair" ]]; then
 fi
 
 bitey_shell() {
-  echo "Welcome to the Bitey Shell. Type 'exit' to quit."
+  echo -e "  🐶 Woof! I'm Bitzy — your Bitey assistant.\nWelcome to 🍫 Bitey $VERSION Shell!"
   while true; do
     read -rp "bitey> " cmd
     case "$cmd" in
