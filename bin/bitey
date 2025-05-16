@@ -438,7 +438,7 @@ bitey_shell() {
     esac
   done
 }
-
+"
 if [[ "$1" == "shell" ]]; then
     bitey_shell
     exit 0
