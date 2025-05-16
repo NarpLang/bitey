@@ -286,7 +286,7 @@ if [[ "$1" == "doctor" ]]; then
         [[ -d "$pkg" ]] || continue
         PKGNAME=$(basename "$pkg")
         found_dep=0
-        for depfile in "$BITEY/pkg"/*/depends.conf; do
+        for depfile in "$BITEY/software"/*/project/depends.txt; do
             grep -q "$PKGNAME" "$depfile" && found_dep=1 && break
         done
         [[ $found_dep -eq 0 ]] && ORPHANS+=("$PKGNAME")
