@@ -382,9 +382,22 @@ if [[ "$1" == "repair" ]]; then
 fi
 
 bitey_shell() {
+  local HISTFILE="$HOME/.biteysh/history"
   echo -e "🐶 Welcome to 🍫 Bitey $VERSION Shell!\n🐾 Type '--help' for Bitey Help."
+  if [[ ! -d "$HOME/.biteysh" ]]; then
+      mkdir "$HOME/.biteysh"
+  fi
+  if [[ ! -f "$HISTFILE" ]]; then
+      touch "$HISTFILE"
+  fi
+  history -r "$HISTFILE"
   while true; do
-    read -rp "🍫 bitey> " cmd
+    read -e -rp "🍫 bitey> " cmd
+    [[ -z "$cmd" ]] && continue
+
+    # Save to history
+    echo "$cmd" >> "$HISTFILE"
+    history -s "$cmd"
     case "$cmd" in
       exit)
         echo "🐶 Exiting Bitey Shell."
@@ -394,6 +407,7 @@ bitey_shell() {
         clear
         ;;
       reload)
+        
         echo "🔁 Reloading Bitey Shell..."
         bitey_shell
         return 0
