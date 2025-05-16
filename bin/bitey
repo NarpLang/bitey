@@ -295,6 +295,16 @@ if [[ "$1" == "doctor" ]]; then
     USAGE=$(du -sh "$BITEY" 2>/dev/null | cut -f1)
     echo "📁 Disk usage:         💾 $USAGE used by Bitey"
 
+    # Permission check
+    if [[ "$(id -u)" -eq 0 ]]; then
+        echo "🔧 Write access:        ✅ Safe (running as root)"
+    elif [[ -w "$BITEY" ]]; then
+        echo "🔧 Write access:        ⚠️ Writable but not root (use caution)"
+    else
+        echo "🔧 Write access:        ❌ Unsafe (no write access)"
+    fi
+
+
     # Remotes
     if [[ -d "$BITEY/addons" ]]; then
         REMOTES=$(find "$BITEY/addons" -maxdepth 1 -type d -name "remote-*" | wc -l)
