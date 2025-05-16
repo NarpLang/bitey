@@ -282,7 +282,7 @@ if [[ "$1" == "doctor" ]]; then
     for pkg in "$BITEY/software"/*; do
         [[ -d "$pkg" ]] || continue
         PKGNAME=$(basename "$pkg")
-        if [[ ! -f "$pkg/files/install.sh" && ! -f "$pkg/install.sh" ]]; then
+        if [[ ! -f "$pkg/project/install.sh" ]]; then
             echo "🧩 Broken package:     ❌ $PKGNAME (no install.sh)"
             BROKEN_PKGS=$((BROKEN_PKGS + 1))
         fi
@@ -366,7 +366,7 @@ if [[ "$1" == "repair" ]]; then
         fi
 
         # Check for missing install.sh or pak.conf
-        if [[ ! -f "$pkg/install.sh" || ! -f "$pkg/pak.conf" ]]; then
+        if [[ ! -f "$pkg/project/install.sh" || ! -f "$pkg/pak.conf" ]]; then
             echo "❌ $pkgname is fake or broken (missing install.sh or pak.conf). Removing..."
             rm -rf "$pkg"
             sudo sed -i "\|$pkg\$|d" "$BITEY/project/bitey_paths"
