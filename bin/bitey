@@ -182,6 +182,9 @@ if [[ "$1" == "--help" ]]; then
     echo "    info <package> - See the package information."
     echo "🐚 Shell:"
     echo "    shell - Open a Bitey Shell session."
+    echo "    reload - Reload the Shell."
+    echo "    exit - Quit the Shell."
+    echo "    clear - Clear the Shell."
     echo "🔐 Lock:"
     echo "    lock - Lock Bitey."
     echo "    unlock - Unlock Bitey."
@@ -379,7 +382,7 @@ if [[ "$1" == "repair" ]]; then
 fi
 
 bitey_shell() {
-  echo -e "🐶 Welcome to 🍫 Bitey $VERSION Shell!\nType 'exit' to quit, or 'reload' to restart the shell."
+  echo -e "🐶 Welcome to 🍫 Bitey $VERSION Shell!\nType '--help' for Bitey Help."
   while true; do
     read -rp "🍫 bitey> " cmd
     set -o history
