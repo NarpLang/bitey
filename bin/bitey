@@ -322,3 +322,35 @@ if [[ "$1" == "doctor" ]]; then
     exit 0
 fi
 
+if [[ "$1" == "repair" ]]; then
+    if [[ ! "$2" == "--nolock" ]]; then
+        if [[ -f "$BITEY/lock" ]]; then
+            echo "🔒 Bitey is locked. Run with '--nolock' if you are sure no proccess editing Bitey Data is present."
+            exit 1
+        fi
+    fi
+
+    echo "🛠 Starting Bitey repair process..."
+    sudo touch "$BITEY/lock"
+
+    echo "🔄 Updating packages to fix real ones..."
+    sudo bitey update
+
+    echo "🧹 Cleaning up fake/broken packages..."
+    for pkg in "$BITEY/packages/"*; do
+        [[ -d "$pkg/.git" ]] || continue
+        pushd "$pkg" >/dev/null || continue
+        if ! git pull --quiet; then
+            pkgname=$(basename "$pkg")
+            echo "❌ $pkgname is broken (not a valid git repo). Removing..."
+            rm -rf "$pkg"
+        fi
+        popd >/dev/null || continue
+    done
+
+    echo "🔓 Unlocking Bitey..."
+    sudo rm "$BITEY/lock"
+
+    echo "✅ Bitey repair complete. Run 'bitey doctor' to verify."
+    exit 0
+fi
