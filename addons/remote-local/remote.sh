@@ -1,4 +1,4 @@
 #!/bin/bash
 REMOTE=.
 REMOTE_DESCRIPTION="Local builds."
-REMOTE_ISGITHUB=0
+
