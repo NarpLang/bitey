@@ -294,13 +294,18 @@ if [[ "$1" == "doctor" ]]; then
         echo "🧹 Orphan packages:    ⚠️  ${ORPHANS[*]}"
     fi
 
-    # Remote config (if you support them in $BITEY/remotes or similar)
-    if [[ -d "$BITEY/remotes" ]]; then
-        REMOTES=$(ls "$BITEY/remotes" 2>/dev/null | wc -l)
-        echo "🌐 Remotes configured: ✅ $REMOTES remotes"
+    # Remotes
+    if [[ -d "$BITEY/addons" ]]; then
+        REMOTES=$(find "$BITEY/addons" -maxdepth 1 -type d -name "remote-*" | wc -l)
+        if [[ "$REMOTES" -gt 0 ]]; then
+            echo "🌐 Remotes configured: ✅ $REMOTES remotes"
+        else
+            echo "🌐 Remotes configured: ❌ None found"
+        fi
     else
         echo "🌐 Remotes configured: ❌ None found"
     fi
+
 
     echo
     echo "✅ All checks complete."
