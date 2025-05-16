@@ -382,7 +382,7 @@ if [[ "$1" == "repair" ]]; then
 fi
 
 bitey_shell() {
-  echo -e "🐶 Welcome to 🍫 Bitey $VERSION Shell!\nType '--help' for Bitey Help."
+  echo -e "🐶 Welcome to 🍫 Bitey $VERSION Shell!\n🐾 Type '--help' for Bitey Help."
   while true; do
     read -rp "🍫 bitey> " cmd
     case "$cmd" in
