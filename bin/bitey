@@ -169,10 +169,14 @@ HELP_MSG="$(cat <<EOF
 Usage: $0 [OPTIONS]
 
 Packages:
-    install - Install a package.
-    remove - Remove a package.
+    install <remote> <package> - Install a package.
+    remove <package> - Remove a package.
     list - List installed packages.
     update - Update all packages.
+    info <package> - See the package information.
+Lock:
+    lock - Lock Bitey.
+    unlock - Unlock Bitey.
 Other:
     --help - See the help message.
     --version - Check the version.
