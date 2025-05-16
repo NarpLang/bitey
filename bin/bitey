@@ -164,7 +164,7 @@ if [[ "$1" == "list" ]]; then
 fi
 
 if [[ $# -eq 0 ]]; then
-    echo "❔ Run 'bitey --help' for usage"
+    echo "❔ Run 'bitey --help' for usage."
     exit 0
 fi
 
@@ -282,7 +282,7 @@ if [[ "$1" == "doctor" ]]; then
 
     # Orphaned packages (no deps requiring them)
     ORPHANS=()
-    for pkg in "$BITEY/pkg"/*; do
+    for pkg in "$BITEY/software"/*; do
         [[ -d "$pkg" ]] || continue
         PKGNAME=$(basename "$pkg")
         found_dep=0
