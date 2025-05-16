@@ -380,9 +380,9 @@ fi
 
 bitey_shell() {
   echo -e "🐶 Welcome to 🍫 Bitey $VERSION Shell!"
-  set -o history
   while true; do
     read -rp "🍫 bitey> " cmd
+    set -o history
     case "$cmd" in
       exit)
         echo "🐶 Exiting Bitey Shell."
