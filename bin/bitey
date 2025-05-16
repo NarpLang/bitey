@@ -12,6 +12,10 @@ if [[ "$1" == "install" ]]; then
     fi
     sudo touch "$BITEY/lock"
 
+    if [[ ! -d "$BITEY/software" ]]; then
+        mkdir "$BITEY/software"
+    fi
+
     REMOTE_NAME="$2"
     shift 2  # Remove the first two args (install + remote)
 
