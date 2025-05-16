@@ -1,10 +1,17 @@
 #!/usr/bin/sudo bash
+set -e
 
-VERSION=1.4
+VERSION=1.5
 
 BITEY=/usr/bitey
 
 if [[ "$1" == "install" ]]; then
+    if [[ -f "$BITEY/lock" ]]; then
+        echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
+        exit 1
+    fi
+    sudo touch "$BITEY/lock"
+
     REMOTE_NAME="$2"
     shift 2  # Remove the first two args (install + remote)
 
@@ -46,10 +53,12 @@ if [[ "$1" == "install" ]]; then
         DEPENDS_FILE="project/depends.txt"
         if [[ -f "$DEPENDS_FILE" ]]; then
             source "$DEPENDS_FILE"
+            sudo bitey unlock
             for dep in "${DEPENDS[@]}"; do
                 echo "📦 Installing dependency $dep..."
                 sudo bitey install "$dep"
             done
+            sudo bitey lock
         fi
 
         sudo bash "project/install.sh"
@@ -60,10 +69,16 @@ if [[ "$1" == "install" ]]; then
         cd - > /dev/null
     done
 
+    sudo rm "$BITEY/lock"
     exit 0
 fi
 
 if [[ "$1" == "remove" ]]; then
+    if [[ -f "$BITEY/lock" ]]; then
+        echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
+        exit 1
+    fi
+    sudo touch "$BITEY/lock"
     shift 1  # Remove "remove" argument
 
     for SOFTWARE_NAME in "$@"; do
@@ -94,10 +109,16 @@ if [[ "$1" == "remove" ]]; then
         cd - > /dev/null
     done
 
+    sudo rm "$BITEY/lock"
     exit 0
 fi
 
 if [[ "$1" == "update" ]]; then
+    if [[ -f "$BITEY/lock" ]]; then
+        echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
+        exit 1
+    fi
+    sudo touch "$BITEY/lock"
     mapfile -t BITEYRC < $BITEY/project/biteyrc
     mapfile -t BITEY_PATHS < $BITEY/project/bitey_paths
     for path in "${BITEY_PATHS[@]}"; do
@@ -117,6 +138,7 @@ if [[ "$1" == "update" ]]; then
     done
     printf "%s\n" "${BITEY_PATHS[@]}" | sudo tee "$BITEY/project/bitey_paths" > /dev/null
     printf "%s\n" "${BITEYRC[@]}" | sudo tee "$BITEY/project/biteyrc" > /dev/null
+    sudo rm "$BITEY/lock"
     exit 0
 fi
 
@@ -191,4 +213,21 @@ if [[ "$1" == "info" ]]; then
     echo "Description: ${PACKAGE_DESCRIPTION:-No description}"
     echo "Location: $PACKAGE_DIR"
     exit 0
+fi
+
+if [[ "$1" == "lock" ]]; then
+    if [[ -f "$BITEY/lock" ]]; then
+        echo -e "🔒 Bitey is already locked.\nRun 'sudo bitey unlock' to remove the lock."
+        exit 1
+    fi
+    sudo touch "$BITEY/lock"
+    echo -e "🔒 Bitey has been locked.\nRun 'sudo bitey unlock' to remove the lock."
+fi
+
+if [[ "$1" == "unlock" ]]; then
+    if [[ ! -f "$BITEY/lock" ]]; then
+        echo -e "🔓 Bitey is already unlocked.\nRun 'sudo bitey lock' to create the lock."
+    fi
+    sudo rm "$BITEY/lock"
+    echo -e "🔓 Bitey has been unlocked.\nRun 'sudo bitey lock' to create the lock."
 fi
