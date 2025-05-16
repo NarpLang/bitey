@@ -186,6 +186,8 @@ if [[ "$1" == "--help" ]]; then
     echo "    reload - Reload the Shell."
     echo "    clear - Clear the Shell."
     echo "    history - Read your history."
+    echo "    help - See the help message."
+    echo "    version - Check the version of your Bitey installation.
     echo "🔐 Lock:"
     echo "    lock - Lock Bitey."
     echo "    unlock - Unlock Bitey."
@@ -384,7 +386,7 @@ fi
 
 bitey_shell() {
   local HISTFILE="$HOME/.biteysh/history"
-  echo -e "🐶 Welcome to 🍫 Bitey $VERSION Shell!\n🐾 Type '--help' for Bitey Help."
+  echo -e "🐶 Welcome to 🍫 Bitey $VERSION Shell!\n🐾 Type 'help' for Bitey Help."
   if [[ ! -d "$HOME/.biteysh" ]]; then
       mkdir "$HOME/.biteysh"
   fi
@@ -415,6 +417,14 @@ bitey_shell() {
         bitey_shell
         return 0
         ;;
+      help)
+        bitey --help
+      version)
+        bitey --version
+      --help)
+        bitey --help
+      --version)
+        bitey --version
       "")
         continue
         ;;
