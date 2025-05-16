@@ -270,7 +270,7 @@ if [[ "$1" == "doctor" ]]; then
 
     # Broken packages
     BROKEN_PKGS=0
-    for pkg in "$BITEY/pkg"/*; do
+    for pkg in "$BITEY/software"/*; do
         [[ -d "$pkg" ]] || continue
         PKGNAME=$(basename "$pkg")
         if [[ ! -f "$pkg/files/install.sh" && ! -f "$pkg/install.sh" ]]; then
