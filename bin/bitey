@@ -338,7 +338,7 @@ if [[ "$1" == "repair" ]]; then
     sudo bitey lock
 
     echo "🧹 Cleaning up fake/broken packages..."
-    for pkg in "$BITEY/packages/"*; do
+    for pkg in "$BITEY/software/"*; do
         [[ -d "$pkg/.git" ]] || continue
         pushd "$pkg" >/dev/null || continue
         if ! git pull --quiet; then
@@ -352,6 +352,7 @@ if [[ "$1" == "repair" ]]; then
     echo "🔓 Unlocking Bitey..."
     sudo rm "$BITEY/lock"
 
-    echo "✅ Bitey repair complete. Run 'bitey doctor' to verify."
+    echo "✅ Bitey repair complete. Sending doctor report..."
+    sudo bitey doctor
     exit 0
 fi
