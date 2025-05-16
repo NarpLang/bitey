@@ -171,8 +171,8 @@ fi
 
 HELP_MSG="$(cat <<EOF
 🐶 Hi, it's Bitzy! I wrote down some commands you need to know down here!
-\e[1m💡 Bitey Help\e[0m
-\e[2m➡️ Usage: $0 [OPTIONS]\e[0m
+💡 Bitey Help
+➡️ Usage: $0 [OPTIONS]
 
 📦 Packages:
     install <remote> <package> - Install a package.
@@ -197,7 +197,7 @@ EOF
 )"
 
 if [[ "$1" == "--help" ]]; then
-    echo -e "$HELP_MSG"
+    echo "$HELP_MSG"
     exit 0
 fi
 
