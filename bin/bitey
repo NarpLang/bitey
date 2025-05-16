@@ -167,3 +167,28 @@ if [[ "$1" == "--version" ]]; then
     echo "🍫 Bitey $VERSION"
     exit 0
 fi
+
+if [[ "$1" == "info" ]]; then
+    PACKAGE="$2"
+    PACKAGE_DIR="$BITEY/software/$PACKAGE"
+
+    if [[ -z "$PACKAGE" ]]; then
+        echo "❌ Please provide a package name."
+        exit 1
+    fi
+
+    if [[ ! -f "$PACKAGE_DIR/pak.conf" ]]; then
+        echo "❌ Package '$PACKAGE' is not installed."
+        exit 1
+    fi
+
+    source "$PACKAGE_DIR/pak.conf"
+
+    echo "📦 Package Info: $PACKAGE"
+    echo "Name: ${PACKAGE_NAME:-$PACKAGE}"
+    echo "Version: ${PACKAGE_VERSION:-Unknown}"
+    echo "Maintainer: ${PACKAGE_MAINTAINER:-Unknown}"
+    echo "Description: ${PACKAGE_DESCRIPTION:-No description}"
+    echo "Location: $PACKAGE_DIR"
+    exit 0
+fi
