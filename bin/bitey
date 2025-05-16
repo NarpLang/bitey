@@ -1,5 +1,7 @@
 #!/usr/bin/sudo bash
 
+VERSION=1.4
+
 BITEY=/usr/bitey
 
 if [[ "$1" == "install" ]]; then
@@ -115,6 +117,7 @@ if [[ "$1" == "update" ]]; then
     done
     printf "%s\n" "${BITEY_PATHS[@]}" | sudo tee "$BITEY/project/bitey_paths" > /dev/null
     printf "%s\n" "${BITEYRC[@]}" | sudo tee "$BITEY/project/biteyrc" > /dev/null
+    exit 0
 fi
 
 if [[ "$1" == "list" ]]; then
@@ -131,5 +134,36 @@ if [[ "$1" == "list" ]]; then
         echo " - $pkgname"
     done
 
+    exit 0
+fi
+
+if [[ $# -eq 0 ]]; then
+    echo "❔ Run 'bitey --help' for usage"
+    exit 0
+fi
+
+HELP_MSG="$(cat <<EOF
+💡 Bitey Help
+Usage: $0 [OPTIONS]
+
+Packages:
+    install - Install a package.
+    remove - Remove a package.
+    list - List installed packages.
+    update - Update all packages.
+Other:
+    --help - See the help message.
+    --version - Check the version.
+EOF
+)"
+
+if [[ "$1" == "--help" ]]; then
+    echo "$HELP_MSG"
+    exit 0
+fi
+
+
+if [[ "$1" == "--version" ]]; then
+    echo "🍫 Bitey $VERSION"
     exit 0
 fi
