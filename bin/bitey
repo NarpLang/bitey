@@ -340,15 +340,27 @@ if [[ "$1" == "repair" ]]; then
 
     echo "🧹 Cleaning up fake/broken packages..."
     for pkg in "$BITEY/software/"*; do
-        [[ -d "$pkg/.git" ]] || continue
-        pushd "$pkg" >/dev/null || continue
+        [[ -d "$pkg" ]] || continue
+        pkgname=$(basename "$pkg")
+
+        if [[ -d "$pkg/.git" ]]; then
+            pushd "$pkg" >/dev/null || continue
         if ! git pull --quiet; then
-            pkgname=$(basename "$pkg")
-            echo "❌ $pkgname is broken (not a valid git repo). Removing..."
+            echo "❌ $pkgname is broken (git pull failed). Removing..."
+            rm -rf "$pkg"
+            popd >/dev/null
+            continue
+        fi
+        popd >/dev/null
+        fi
+
+        # Check for missing install.sh or pak.conf
+        if [[ ! -f "$pkg/install.sh" || ! -f "$pkg/pak.conf" ]]; then
+            echo "❌ $pkgname is fake or broken (missing install.sh or pak.conf). Removing..."
             rm -rf "$pkg"
         fi
-        popd >/dev/null || continue
     done
+
 
     echo "🔓 Unlocking Bitey..."
     sudo rm "$BITEY/lock"
