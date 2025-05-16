@@ -183,9 +183,12 @@ Lock:
     unlock - Unlock Bitey.
 Installation:
     doctor - Analyze your installation of Bitey.
+    repair - Repair your installation of Bitey.
     --version - Check the version of your Bitey Installation.
 Help:
     --help - See the help message.
+Other:
+    shell - Open a Bitey Shell session.
 EOF
 )"
 
@@ -372,5 +375,29 @@ if [[ "$1" == "repair" ]]; then
 
     echo "✅ Bitey repair complete. Sending doctor report..."
     sudo bitey doctor
+    exit 0
+fi
+
+bitey_shell() {
+  echo "Welcome to the Bitey Shell. Type 'exit' to quit."
+  while true; do
+    read -rp "bitey> " cmd
+    case "$cmd" in
+      exit)
+        echo "Exiting Bitey Shell."
+        break
+        ;;
+      "")
+        continue
+        ;;
+      *)
+        sudo bitey $cmd
+        ;;
+    esac
+  done
+}
+
+if [[ "$1" == "shell" ]]; then
+    bitey_shell
     exit 0
 fi
