@@ -384,7 +384,7 @@ bitey_shell() {
     read -rp "bitey> " cmd
     case "$cmd" in
       exit)
-        echo "Exiting Bitey Shell."
+        echo "🐶 Exiting Bitey Shell."
         break
         ;;
       "")
