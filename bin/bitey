@@ -116,3 +116,20 @@ if [[ "$1" == "update" ]]; then
     printf "%s\n" "${BITEY_PATHS[@]}" | sudo tee "$BITEY/project/bitey_paths" > /dev/null
     printf "%s\n" "${BITEYRC[@]}" | sudo tee "$BITEY/project/biteyrc" > /dev/null
 fi
+
+if [[ "$1" == "list" ]]; then
+    INSTALL_DIR="/usr/bitey/software"
+    if [[ ! -d "$INSTALL_DIR" ]]; then
+        echo "❌ No packages installed."
+        exit 1
+    fi
+
+    echo "📦 Installed Bitey packages:"
+    for pkg in "$INSTALL_DIR"/*; do
+        [[ -d "$pkg" ]] || continue
+        pkgname=$(basename "$pkg")
+        echo " - $pkgname"
+    done
+
+    exit 0
+fi
