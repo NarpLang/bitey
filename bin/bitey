@@ -10,7 +10,7 @@ if [[ "$1" == "install" ]]; then
         echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
         exit 1
     fi
-    sudo touch "$BITEY/lock"
+    sudo bitey lock
 
     if [[ ! -d "$BITEY/software" ]]; then
         mkdir "$BITEY/software"
@@ -74,7 +74,7 @@ if [[ "$1" == "install" ]]; then
         cd - > /dev/null
     done
 
-    sudo rm "$BITEY/lock"
+    sudo bitey unlock
     exit 0
 fi
 
@@ -83,7 +83,7 @@ if [[ "$1" == "remove" ]]; then
         echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
         exit 1
     fi
-    sudo touch "$BITEY/lock"
+    sudo bitey lock
     shift 1  # Remove "remove" argument
 
     for SOFTWARE_NAME in "$@"; do
@@ -114,7 +114,7 @@ if [[ "$1" == "remove" ]]; then
         cd - > /dev/null
     done
 
-    sudo rm "$BITEY/lock"
+    sudo bitey unlock
     exit 0
 fi
 
@@ -123,7 +123,7 @@ if [[ "$1" == "update" ]]; then
         echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
         exit 1
     fi
-    sudo touch "$BITEY/lock"
+    sudo bitey lock
     mapfile -t BITEYRC < $BITEY/project/biteyrc
     mapfile -t BITEY_PATHS < $BITEY/project/bitey_paths
     for path in "${BITEY_PATHS[@]}"; do
@@ -143,7 +143,7 @@ if [[ "$1" == "update" ]]; then
     done
     printf "%s\n" "${BITEY_PATHS[@]}" | sudo tee "$BITEY/project/bitey_paths" > /dev/null
     printf "%s\n" "${BITEYRC[@]}" | sudo tee "$BITEY/project/biteyrc" > /dev/null
-    sudo rm "$BITEY/lock"
+    sudo bitey unlock
     exit 0
 fi
 
