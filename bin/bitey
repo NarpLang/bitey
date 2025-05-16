@@ -381,7 +381,7 @@ fi
 bitey_shell() {
   echo -e "🐶 Welcome to 🍫 Bitey $VERSION Shell!"
   while true; do
-    read -rp "bitey> " cmd
+    read -rp "🍫 bitey> " cmd
     case "$cmd" in
       exit)
         echo "🐶 Exiting Bitey Shell."
