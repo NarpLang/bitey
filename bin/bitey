@@ -177,9 +177,11 @@ Packages:
 Lock:
     lock - Lock Bitey.
     unlock - Unlock Bitey.
-Other:
+Installation:
+    doctor - Analyze your installation of Bitey.
+    --version - Check the version of your Bitey Installation.
+Help:
     --help - See the help message.
-    --version - Check the version.
 EOF
 )"
 
@@ -235,3 +237,73 @@ if [[ "$1" == "unlock" ]]; then
     sudo rm "$BITEY/lock"
     echo -e "🔓 Bitey has been unlocked.\nRun 'sudo bitey lock' to create the lock."
 fi
+
+if [[ "$1" == "doctor" ]]; then
+    echo "🩺 Bitey Doctor Report"
+    echo
+
+    # Lock status
+    if [[ -f "$BITEY/lock" ]]; then
+        echo "🔐 Lock status:        ❌ Locked"
+    else
+        echo "🔐 Lock status:        ✅ Unlocked"
+    fi
+
+    # Bitey root directory
+    if [[ -d "$BITEY" ]]; then
+        echo "📂 BITEY directory:    ✅ $BITEY"
+    else
+        echo "📂 BITEY directory:    ❌ Not found"
+    fi
+
+    # Installed packages
+    if [[ -d "$BITEY/pkg" ]]; then
+        PKGS=$(ls "$BITEY/pkg" 2>/dev/null | wc -l)
+        echo "📦 Installed packages: ✅ $PKGS packages found"
+    else
+        echo "📦 Installed packages: ❌ None"
+    fi
+
+    # Broken packages
+    BROKEN_PKGS=0
+    for pkg in "$BITEY/pkg"/*; do
+        [[ -d "$pkg" ]] || continue
+        PKGNAME=$(basename "$pkg")
+        if [[ ! -f "$pkg/files/install.sh" && ! -f "$pkg/install.sh" ]]; then
+            echo "🧩 Broken package:     ❌ $PKGNAME (no install.sh)"
+            BROKEN_PKGS=$((BROKEN_PKGS + 1))
+        fi
+    done
+    [[ $BROKEN_PKGS -eq 0 ]] && echo "🧩 Broken packages:    ✅ None"
+
+    # Orphaned packages (no deps requiring them)
+    ORPHANS=()
+    for pkg in "$BITEY/pkg"/*; do
+        [[ -d "$pkg" ]] || continue
+        PKGNAME=$(basename "$pkg")
+        found_dep=0
+        for depfile in "$BITEY/pkg"/*/depends.conf; do
+            grep -q "$PKGNAME" "$depfile" && found_dep=1 && break
+        done
+        [[ $found_dep -eq 0 ]] && ORPHANS+=("$PKGNAME")
+    done
+
+    if [[ ${#ORPHANS[@]} -eq 0 ]]; then
+        echo "🧹 Orphan packages:    ✅ None"
+    else
+        echo "🧹 Orphan packages:    ⚠️  ${ORPHANS[*]}"
+    fi
+
+    # Remote config (if you support them in $BITEY/remotes or similar)
+    if [[ -d "$BITEY/remotes" ]]; then
+        REMOTES=$(ls "$BITEY/remotes" 2>/dev/null | wc -l)
+        echo "🌐 Remotes configured: ✅ $REMOTES remotes"
+    else
+        echo "🌐 Remotes configured: ❌ None found"
+    fi
+
+    echo
+    echo "✅ All checks complete."
+    exit 0
+fi
+
