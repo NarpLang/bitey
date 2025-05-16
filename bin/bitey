@@ -406,8 +406,10 @@ bitey_shell() {
       clear)
         clear
         ;;
+      history)
+        history
+        ;;
       reload)
-        
         echo "🔁 Reloading Bitey Shell..."
         bitey_shell
         return 0
