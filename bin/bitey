@@ -1,4 +1,4 @@
-#!/usr/bin/sudo bash
+#!/bin/bash
 set -e
 
 VERSION=1.7
