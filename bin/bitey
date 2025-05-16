@@ -236,19 +236,19 @@ fi
 
 if [[ "$1" == "lock" ]]; then
     if [[ -f "$BITEY/lock" ]]; then
-        echo -e "🔒 Bitey is already locked.\nRun 'sudo bitey unlock' to remove the lock."
+        echo -e "🔒 Bitey is already locked."
         exit 1
     fi
     sudo touch "$BITEY/lock"
-    echo -e "🔒 Bitey has been locked.\nRun 'sudo bitey unlock' to remove the lock."
+    echo -e "🔒 Bitey locked."
 fi
 
 if [[ "$1" == "unlock" ]]; then
     if [[ ! -f "$BITEY/lock" ]]; then
-        echo -e "🔓 Bitey is already unlocked.\nRun 'sudo bitey lock' to create the lock."
+        echo -e "🔓 Bitey is already unlocked."
     fi
     sudo rm "$BITEY/lock"
-    echo -e "🔓 Bitey has been unlocked.\nRun 'sudo bitey lock' to create the lock."
+    echo -e "🔓 Bitey unlocked."
 fi
 
 if [[ "$1" == "doctor" ]]; then
