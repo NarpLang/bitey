@@ -24,23 +24,23 @@ if [[ "$1" == "install" ]]; then
         INSTALL_PATH="$BITEY/software/$SOFTWARE_NAME"
 
         if [[ ! -f "$REMOTE_ADDON/remote.sh" ]]; then
-            echo "❌ Remote '$REMOTE_NAME' not found or invalid."
+            echo "❌ Bitzy doesn't know where to go... (Remote '$REMOTE_NAME' not found or invalid.)"
             exit 1
         fi
 
         source "$REMOTE_ADDON/remote.sh"
 
         if [[ -z "$REMOTE" ]]; then
-            echo "❌ REMOTE variable not set in $REMOTE_ADDON/remote.sh."
+            echo "❌ Bitzy doesn't know where to go, nothing on the information paper... (REMOTE variable not set in $REMOTE_ADDON/remote.sh.)"
             exit 1
         fi
 
         if [[ -d "$INSTALL_PATH" ]]; then
-            echo "⚠️ $SOFTWARE_NAME is already installed at $INSTALL_PATH. Skipping..."
+            echo "⚠️ Bitzy found out that $SOFTWARE_NAME is already installed at $INSTALL_PATH. Skipping..."
             continue
         fi
 
-        echo "📦 Installing $SOFTWARE_NAME."
+        echo "📦 Bitzy is installing $SOFTWARE_NAME..."
         sudo git clone "$REMOTE/$SOFTWARE_NAME" "$INSTALL_PATH" || {
             echo "❌ Installation failure."
             exit 1
@@ -69,6 +69,7 @@ if [[ "$1" == "install" ]]; then
         sudo chmod +x "$INSTALL_PATH/bin/"*
         echo "$INSTALL_PATH" | sudo tee -a "$BITEY/project/bitey_paths"
         echo "$INSTALL_PATH/bin" | sudo tee -a "$BITEY/project/biteyrc"
+        echo "✅ Bitzy installed $SOFTWARE_NAME."
 
         cd - > /dev/null
     done
@@ -89,27 +90,27 @@ if [[ "$1" == "remove" ]]; then
         INSTALL_PATH="$BITEY/software/$SOFTWARE_NAME"
 
         if [[ ! -d "$INSTALL_PATH" ]]; then
-            echo "❌ $SOFTWARE_NAME is not installed."
+            echo "❌ Bitzy thinks $SOFTWARE_NAME is not installed."
             continue
         fi
 
         cd "$INSTALL_PATH" || continue
 
         if [[ -f project/remove.sh ]]; then
-            echo "🔧 Running remove script for $SOFTWARE_NAME..."
+            echo "🔧 Bitzy is running remove script for $SOFTWARE_NAME..."
             sudo bash "project/remove.sh"
         else
-            echo "⚠️ No remove script found, continuing with raw removal."
+            echo "⚠️ Bitzy didn't find a remove script, continuing with raw removal."
         fi
 
-        echo "🗑️ Removing $SOFTWARE_NAME..."
+        echo "🗑️ Bitzy is removing $SOFTWARE_NAME..."
         sudo rm -rf "$INSTALL_PATH"
 
         # Clean bitey_paths and biteyrc
         sudo sed -i "\|$INSTALL_PATH\$|d" "$BITEY/project/bitey_paths"
         sudo sed -i "\|$INSTALL_PATH/bin\$|d" "$BITEY/project/biteyrc"
 
-        echo "✅ Removed $SOFTWARE_NAME."
+        echo "✅ Bitzy removed $SOFTWARE_NAME."
         cd - > /dev/null
     done
 
@@ -129,12 +130,12 @@ if [[ "$1" == "update" ]]; then
         if [ -d "$path" ]; then
             cd "$path" || continue
             
-            echo "🔄 Updating path $path..."
+            echo "🔄 Bitzy is updating path $path..."
             sudo git reset --hard HEAD
             sudo git pull
             sudo chmod +x bin/*
             if [[ -f project/update.sh ]]; then
-                echo "🔧 Running update script..."
+                echo "🔧 Bitzy is running update script..."
                 sudo bash "project/update.sh"
             fi
             cd - > /dev/null || exit 0
@@ -164,36 +165,39 @@ if [[ "$1" == "list" ]]; then
 fi
 
 if [[ $# -eq 0 ]]; then
-    echo "❔ Run 'bitey --help' for usage."
+    echo "🐶 Run 'bitey --help' for usage."
     exit 0
 fi
 
 HELP_MSG="$(cat <<EOF
-💡 Bitey Help
-Usage: $0 [OPTIONS]
+🐶 Hi, it's Bitzy! I wrote down some commands you need to know down here!
+\e[1m💡 Bitey Help\e[0m
+\e[2m➡️ Usage: $0 [OPTIONS]\e[0m
 
-Packages:
+📦 Packages:
     install <remote> <package> - Install a package.
     remove <package> - Remove a package.
     list - List installed packages.
     update - Update all packages.
     info <package> - See the package information.
-Shell:
+🐚 Shell:
     shell - Open a Bitey Shell session.
-Lock:
+🔐 Lock:
     lock - Lock Bitey.
     unlock - Unlock Bitey.
-Installation:
+💿 Installation:
     doctor - Analyze your installation of Bitey.
     repair - Repair your installation of Bitey.
     --version - Check the version of your Bitey Installation.
-Help:
+❓ Help:
     --help - See the help message.
+
+🐾 Tip: Use the Bitey Shell (run `bitey shell`) to manage everything faster!
 EOF
 )"
 
 if [[ "$1" == "--help" ]]; then
-    echo "$HELP_MSG"
+    echo -e "$HELP_MSG"
     exit 0
 fi
 
