@@ -178,6 +178,8 @@ Packages:
     list - List installed packages.
     update - Update all packages.
     info <package> - See the package information.
+Shell:
+    shell - Open a Bitey Shell session.
 Lock:
     lock - Lock Bitey.
     unlock - Unlock Bitey.
@@ -187,8 +189,6 @@ Installation:
     --version - Check the version of your Bitey Installation.
 Help:
     --help - See the help message.
-Other:
-    shell - Open a Bitey Shell session.
 EOF
 )"
 
