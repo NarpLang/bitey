@@ -379,7 +379,7 @@ if [[ "$1" == "repair" ]]; then
 fi
 
 bitey_shell() {
-  echo -e "🐶 Welcome to 🍫 Bitey $VERSION Shell!"
+  echo -e "🐶 Welcome to 🍫 Bitey $VERSION Shell!\nType 'exit' to quit, or 'reload' to restart the shell."
   while true; do
     read -rp "🍫 bitey> " cmd
     set -o history
@@ -390,6 +390,11 @@ bitey_shell() {
         ;;
       clear)
         clear
+        ;;
+      reload)
+        echo "🔁 Reloading Bitey Shell..."
+        bitey_shell
+        return 0
         ;;
       "")
         continue
