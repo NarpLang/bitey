@@ -307,39 +307,6 @@ if [[ "$1" == "doctor" ]]; then
         echo "🌐 Remotes configured: ❌ None found"
     fi
 
-    # Outdated package detection
-    OUTDATED=0
-    echo -n "🔄 Outdated packages:  "
-    for pkg in "$BITEY/software/"*; do
-        [[ -d "$pkg" ]] || continue
-        PKG_NAME=$(basename "$pkg")
-        LOCAL_VER=$(grep "^PACKAGE_VERSION=" "$pkg/pak.conf" 2>/dev/null | cut -d= -f2)
-
-        for remote in "$BITEY/addons"/remote-*; do
-            [[ -d "$remote" ]] || continue
-            REMOTE_NAME=$(basename "$remote" | sed 's/remote-//')
-            REMOTE_URL=$(source "$remote/remote.sh"; echo "$REMOTE")
-
-            if [[ "$REMOTE_URL" == https://github.com/* ]]; then
-                RAW_URL=$(echo "$REMOTE_URL" | sed 's|https://github.com/|https://raw.githubusercontent.com/|')
-                FINAL_URL="$RAW_URL/$PKG_NAME/main/pak.conf"
-            else
-                FINAL_URL="$REMOTE_URL/$PKG_NAME/pak.conf"
-            fi
-
-            TMP_CONF=$(mktemp)
-            if curl -fsSL "$FINAL_URL" -o "$TMP_CONF" 2>/dev/null; then
-                REMOTE_VER=$(grep "^PACKAGE_VERSION=" "$TMP_CONF" | cut -d= -f2)
-                if [[ "$REMOTE_VER" != "$LOCAL_VER" ]]; then
-                    echo -e "\n   ⬆️  $PKG_NAME: local=$LOCAL_VER, remote=$REMOTE_VER ($REMOTE_NAME)"
-                    OUTDATED=1
-                fi
-            fi
-            rm -f "$TMP_CONF"
-        done
-    done
-    [[ $OUTDATED -eq 0 ]] && echo "✅ All up to date"
-
     echo
     echo "✅ All checks complete."
     exit 0
