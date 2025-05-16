@@ -198,7 +198,7 @@ if [[ "$1" == "--help" ]]; then
     echo "❓ Help:"
     echo "    --help - See the help message."
     echo
-    echo "🐾 Tip: Use the Bitey Shell (run \`bitey shell\`) to manage everything faster!"
+    echo "🐾 Tip: Use the Bitey Shell, run \`bitey shell\` to manage everything faster!"
     exit 0
 fi
 
