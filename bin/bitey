@@ -280,24 +280,6 @@ if [[ "$1" == "doctor" ]]; then
     done
     [[ $BROKEN_PKGS -eq 0 ]] && echo "🧩 Broken packages:    ✅ None"
 
-    # Orphaned packages (no deps requiring them)
-    ORPHANS=()
-    for pkg in "$BITEY/software"/*; do
-        [[ -d "$pkg" ]] || continue
-        PKGNAME=$(basename "$pkg")
-        found_dep=0
-        for depfile in "$BITEY/software"/*/project/depends.txt; do
-            grep -q "$PKGNAME" "$depfile" && found_dep=1 && break
-        done
-        [[ $found_dep -eq 0 ]] && ORPHANS+=("$PKGNAME")
-    done
-
-    if [[ ${#ORPHANS[@]} -eq 0 ]]; then
-        echo "🧹 Orphan packages:    ✅ None"
-    else
-        echo "🧹 Orphan packages:    ⚠️  ${ORPHANS[*]}"
-    fi
-
     # Remotes
     if [[ -d "$BITEY/addons" ]]; then
         REMOTES=$(find "$BITEY/addons" -maxdepth 1 -type d -name "remote-*" | wc -l)
