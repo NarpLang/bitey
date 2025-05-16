@@ -421,10 +421,6 @@ bitey_shell() {
         bitey --help
       version)
         bitey --version
-      --help)
-        bitey --help
-      --version)
-        bitey --version
       "")
         continue
         ;;
