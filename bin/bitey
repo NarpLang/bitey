@@ -257,8 +257,8 @@ if [[ "$1" == "doctor" ]]; then
     fi
 
     # Installed packages
-    if [[ -d "$BITEY/pkg" ]]; then
-        PKGS=$(ls "$BITEY/pkg" 2>/dev/null | wc -l)
+    if [[ -d "$BITEY/software" ]]; then
+        PKGS=$(ls "$BITEY/software" 2>/dev/null | wc -l)
         echo "📦 Installed packages: ✅ $PKGS packages found"
     else
         echo "📦 Installed packages: ❌ None"
