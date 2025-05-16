@@ -348,6 +348,8 @@ if [[ "$1" == "repair" ]]; then
         if ! git pull --quiet; then
             echo "❌ $pkgname is broken (git pull failed). Removing..."
             rm -rf "$pkg"
+            sudo sed -i "\|$pkg\$|d" "$BITEY/project/bitey_paths"
+            sudo sed -i "\|$pkg/bin\$|d" "$BITEY/project/biteyrc"
             popd >/dev/null
             continue
         fi
@@ -358,8 +360,11 @@ if [[ "$1" == "repair" ]]; then
         if [[ ! -f "$pkg/install.sh" || ! -f "$pkg/pak.conf" ]]; then
             echo "❌ $pkgname is fake or broken (missing install.sh or pak.conf). Removing..."
             rm -rf "$pkg"
+            sudo sed -i "\|$pkg\$|d" "$BITEY/project/bitey_paths"
+            sudo sed -i "\|$pkg/bin\$|d" "$BITEY/project/biteyrc"
         fi
     done
+
 
 
     echo "🔓 Unlocking Bitey..."
