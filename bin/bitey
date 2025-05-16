@@ -387,6 +387,9 @@ bitey_shell() {
         echo "🐶 Exiting Bitey Shell."
         break
         ;;
+      clear)
+        clear
+        ;;
       "")
         continue
         ;;
