@@ -442,3 +442,24 @@ if [[ "$1" == "shell" ]]; then
     bitey_shell
     exit 0
 fi
+
+if [[ "$1" == "reinstall" ]]; then
+    if [[ -f "$BITEY/lock" ]]; then
+        echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
+        exit 1
+    fi
+
+    REMOTE_NAME="$2"
+    shift 2  # Remove the first two args (install + remote)
+
+    for SOFTWARE_NAME in "$@"; do
+        echo "📦 Bitzy is reinstalling $SOFTWARE_NAME"
+        echo
+        sudo bitey remove "$SOFTWARE_NAME"
+        sudo bitey install "$REMOTE_NAME" "$SOFTWARE_NAME"
+        echo
+        echo "✅ Bitzy has reinstalled $SOFTWARE_NAME."
+    done
+
+    exit 0
+fi
