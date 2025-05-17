@@ -453,7 +453,7 @@ if [[ "$1" == "reinstall" ]]; then
     shift 2  # Remove the first two args (install + remote)
 
     for SOFTWARE_NAME in "$@"; do
-        echo "📦 Bitzy is reinstalling $SOFTWARE_NAME"
+        echo "📦 Bitzy is reinstalling $SOFTWARE_NAME..."
         echo
         sudo bitey remove "$SOFTWARE_NAME"
         sudo bitey install "$REMOTE_NAME" "$SOFTWARE_NAME"
