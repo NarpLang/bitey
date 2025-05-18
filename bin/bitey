@@ -394,8 +394,7 @@ bitey_shell() {
   fi
   history -r "$HISTFILE"
   while true; do
-    printf "🍫 bitey> "
-    read cmd
+    read -e -rp "🍫 bitey> " cmd
     [[ -z "$cmd" ]] && continue
 
     # Save to history
