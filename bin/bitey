@@ -383,6 +383,21 @@ if [[ "$1" == "repair" ]]; then
     exit 0
 fi
 
+cf_input() {
+    if command -v reader &>/dev/null; then
+        REPLY=$(reader "$1" -e "$HISTFILE")
+        echo "$REPLY" >> "$HISTFILE"
+        history -s "$REPLY"
+    else
+        echo -e "⚠️  🐶 WAIT---! You're not using \033[1mreader\033[0m???\n"
+        echo -e "Well, sucks... but you can run \033[1minstall main coffee\033[0m if you change your mind, heh..."
+        echo -e "Because you're not using reader, the prompt will use printf with read...\n"
+        printf "🍫 bitey> "
+        read
+        REPLY=$REPLY  # assign for consistency
+    fi
+}
+
 bitey_shell() {
   local HISTFILE="$HOME/.biteysh/history"
   echo -e "🐶 Welcome to 🍫 Bitey $VERSION Shell!\n🐾 Type 'help' for Bitey Help."
@@ -394,12 +409,9 @@ bitey_shell() {
   fi
   history -r "$HISTFILE"
   while true; do
-    read -e -rp "🍫 bitey> " cmd
+    cf_input "🍫 bitey> "
     [[ -z "$cmd" ]] && continue
 
-    # Save to history
-    echo "$cmd" >> "$HISTFILE"
-    history -s "$cmd"
     case "$cmd" in
       exit)
         echo "🐶 Exiting Bitey Shell."
