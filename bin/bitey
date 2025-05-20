@@ -1,477 +1,205 @@
-#!/bin/bash
-set -e
-
-VERSION=1.8
-
-BITEY=/usr/bitey
-
-if [[ "$1" == "install" ]]; then
-    if [[ -f "$BITEY/lock" ]]; then
-        echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
-        exit 1
-    fi
-    sudo bitey lock
-
-    if [[ ! -d "$BITEY/software" ]]; then
-        mkdir "$BITEY/software"
-    fi
-
-    REMOTE_NAME="$2"
-    shift 2  # Remove the first two args (install + remote)
-
-    for SOFTWARE_NAME in "$@"; do
-        REMOTE_ADDON="$BITEY/addons/remote-$REMOTE_NAME"
-        INSTALL_PATH="$BITEY/software/$SOFTWARE_NAME"
-
-        if [[ ! -f "$REMOTE_ADDON/remote.sh" ]]; then
-            echo "❌ Bitzy doesn't know where to go... (Remote '$REMOTE_NAME' not found or invalid.)"
-            exit 1
-        fi
-
-        source "$REMOTE_ADDON/remote.sh"
-
-        if [[ -z "$REMOTE" ]]; then
-            echo "❌ Bitzy doesn't know where to go, nothing on the information paper... (REMOTE variable not set in $REMOTE_ADDON/remote.sh.)"
-            exit 1
-        fi
-
-        if [[ -d "$INSTALL_PATH" ]]; then
-            echo "⚠️ Bitzy found out that $SOFTWARE_NAME is already installed at $INSTALL_PATH. Skipping..."
-            continue
-        fi
-
-        echo "📦 Bitzy is installing $SOFTWARE_NAME..."
-        sudo git clone "$REMOTE/$SOFTWARE_NAME" "$INSTALL_PATH" || {
-            echo "❌ Installation failure."
-            exit 1
-        }
-
-        cd "$INSTALL_PATH" || exit 1
-
-        if [[ ! -f project/paths.txt ]]; then
-            echo "❌ Installation invalid."
-            rm -rf "$INSTALL_PATH"
-            exit 1
-        fi
-
-        DEPENDS_FILE="project/depends.txt"
-        if [[ -f "$DEPENDS_FILE" ]]; then
-            source "$DEPENDS_FILE"
-            sudo bitey unlock
-            for dep in "${DEPENDS[@]}"; do
-                echo "📦 Installing dependency $dep..."
-                sudo bitey install "$dep"
-            done
-            sudo bitey lock
-        fi
-
-        sudo bash "project/install.sh"
-        sudo chmod +x "$INSTALL_PATH/bin/"*
-        echo "$INSTALL_PATH" | sudo tee -a "$BITEY/project/bitey_paths"
-        echo "$INSTALL_PATH/bin" | sudo tee -a "$BITEY/project/biteyrc"
-        echo "✅ Bitzy installed $SOFTWARE_NAME."
-
-        cd - > /dev/null
-    done
-
-    sudo bitey unlock
-    exit 0
-fi
-
-if [[ "$1" == "remove" ]]; then
-    if [[ -f "$BITEY/lock" ]]; then
-        echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
-        exit 1
-    fi
-    sudo bitey lock
-    shift 1  # Remove "remove" argument
-
-    for SOFTWARE_NAME in "$@"; do
-        INSTALL_PATH="$BITEY/software/$SOFTWARE_NAME"
-
-        if [[ ! -d "$INSTALL_PATH" ]]; then
-            echo "❌ Bitzy thinks $SOFTWARE_NAME is not installed."
-            continue
-        fi
-
-        cd "$INSTALL_PATH" || continue
-
-        if [[ -f project/remove.sh ]]; then
-            echo "🔧 Bitzy is running remove script for $SOFTWARE_NAME..."
-            sudo bash "project/remove.sh"
-        else
-            echo "⚠️ Bitzy didn't find a remove script, continuing with raw removal."
-        fi
-
-        echo "🗑️ Bitzy is removing $SOFTWARE_NAME..."
-        sudo rm -rf "$INSTALL_PATH"
-
-        # Clean bitey_paths and biteyrc
-        sudo sed -i "\|$INSTALL_PATH\$|d" "$BITEY/project/bitey_paths"
-        sudo sed -i "\|$INSTALL_PATH/bin\$|d" "$BITEY/project/biteyrc"
-
-        echo "✅ Bitzy removed $SOFTWARE_NAME."
-        cd - > /dev/null
-    done
-
-    sudo bitey unlock
-    exit 0
-fi
-
-if [[ "$1" == "update" ]]; then
-    if [[ -f "$BITEY/lock" ]]; then
-        echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
-        exit 1
-    fi
-    sudo bitey lock
-    mapfile -t BITEYRC < $BITEY/project/biteyrc
-    mapfile -t BITEY_PATHS < $BITEY/project/bitey_paths
-    for path in "${BITEY_PATHS[@]}"; do
-        if [ -d "$path" ]; then
-            cd "$path" || continue
-            
-            echo "🔄 Bitzy is updating path $path..."
-            sudo git reset --hard HEAD
-            sudo git pull
-            sudo chmod +x bin/*
-            if [[ -f project/update.sh ]]; then
-                echo "🔧 Bitzy is running update script..."
-                sudo bash "project/update.sh"
-            fi
-            cd - > /dev/null || exit 0
-        fi
-    done
-    printf "%s\n" "${BITEY_PATHS[@]}" | sudo tee "$BITEY/project/bitey_paths" > /dev/null
-    printf "%s\n" "${BITEYRC[@]}" | sudo tee "$BITEY/project/biteyrc" > /dev/null
-    sudo bitey unlock
-    exit 0
-fi
-
-if [[ "$1" == "list" ]]; then
-    INSTALL_DIR="/usr/bitey/software"
-    if [[ ! -d "$INSTALL_DIR" ]]; then
-        echo "❌ No packages installed."
-        exit 1
-    fi
-
-    echo "📦 Installed Bitey packages:"
-    for pkg in "$INSTALL_DIR"/*; do
-        [[ -d "$pkg" ]] || continue
-        pkgname=$(basename "$pkg")
-        echo " - $pkgname"
-    done
-
-    exit 0
-fi
-
-if [[ $# -eq 0 ]]; then
-    echo "🐶 Run 'bitey --help' for usage."
-    exit 0
-fi
-
-if [[ "$1" == "--help" ]]; then
-    echo "🐶 Hi, it's Bitzy! I wrote down some commands you need to know down here!"
-    echo "💡 Bitey Help"
-    echo "➡️ Usage: $0 [OPTIONS]"
-    echo
-    echo "📦 Packages:"
-    echo "    install <remote> <package> - Install a package."
-    echo "    remove <package> - Remove a package."
-    echo "    list - List installed packages."
-    echo "    update - Update all packages."
-    echo "    info <package> - See the package information."
-    echo "🐚 Shell:"
-    echo "    shell - Open a Bitey Shell session."
-    echo "    exit - Quit the Shell."
-    echo "    reload - Reload the Shell."
-    echo "    clear - Clear the Shell."
-    echo "    history - Read your history."
-    echo "    help - See the help message."
-    echo "    version - Check the version of your Bitey installation."
-    echo "🔐 Lock:"
-    echo "    lock - Lock Bitey."
-    echo "    unlock - Unlock Bitey."
-    echo "💿 Installation:"
-    echo "    doctor - Analyze your installation of Bitey."
-    echo "    repair - Repair your installation of Bitey."
-    echo "    --version - Check the version of your Bitey Installation."
-    echo "❓ Help:"
-    echo "    --help - See the help message."
-    echo
-    echo "🐾 Tip: Use the Bitey Shell (run \`bitey shell\`) to manage everything faster!"
-    exit 0
-fi
-
-
-
-if [[ "$1" == "--version" ]]; then
-    echo "🍫 Bitey $VERSION"
-    exit 0
-fi
-
-if [[ "$1" == "info" ]]; then
-    PACKAGE="$2"
-    PACKAGE_DIR="$BITEY/software/$PACKAGE"
-
-    if [[ -z "$PACKAGE" ]]; then
-        echo "❌ Please provide a package name."
-        exit 1
-    fi
-
-    if [[ ! -f "$PACKAGE_DIR/pak.conf" ]]; then
-        echo "❌ Package '$PACKAGE' is not installed."
-        exit 1
-    fi
-
-    source "$PACKAGE_DIR/pak.conf"
-
-    echo "📦 Package Info: $PACKAGE"
-    echo "Name: ${PACKAGE_NAME:-$PACKAGE}"
-    echo "Version: ${PACKAGE_VERSION:-Unknown}"
-    echo "Maintainer: ${PACKAGE_MAINTAINER:-Unknown}"
-    echo "Description: ${PACKAGE_DESCRIPTION:-No description}"
-    echo "Location: $PACKAGE_DIR"
-    exit 0
-fi
-
-if [[ "$1" == "lock" ]]; then
-    if [[ -f "$BITEY/lock" ]]; then
-        exit 0
-    fi
-    sudo touch "$BITEY/lock"
-    exit 0
-fi
-
-if [[ "$1" == "unlock" ]]; then
-    if [[ ! -f "$BITEY/lock" ]]; then
-        exit 0
-    fi
-    sudo rm "$BITEY/lock"
-    exit 0
-fi
-
-if [[ "$1" == "doctor" ]]; then
-    echo "🩺 Bitey Doctor Report"
-    echo
-
-    # Lock status
-    if [[ -f "$BITEY/lock" ]]; then
-        echo "🔐 Lock status:        ❌ Locked"
-    else
-        echo "🔐 Lock status:        ✅ Unlocked"
-    fi
-
-    # Bitey root directory
-    if [[ -d "$BITEY" ]]; then
-        echo "📂 BITEY directory:    ✅ $BITEY"
-    else
-        echo "📂 BITEY directory:    ❌ Not found"
-    fi
-
-    # Installed packages
-    if [[ -d "$BITEY/software" ]]; then
-        PKGS=$(ls "$BITEY/software" 2>/dev/null | wc -l)
-        echo "📦 Installed packages: ✅ $PKGS packages found"
-    else
-        echo "📦 Installed packages: ❌ None"
-    fi
-
-    # Broken packages
-    BROKEN_PKGS=0
-    for pkg in "$BITEY/software"/*; do
-        [[ -d "$pkg" ]] || continue
-        PKGNAME=$(basename "$pkg")
-        if [[ ! -f "$pkg/project/install.sh" ]]; then
-            echo "🧩 Broken package:     ❌ $PKGNAME (no install.sh)"
-            BROKEN_PKGS=$((BROKEN_PKGS + 1))
-        fi
-    done
-    [[ $BROKEN_PKGS -eq 0 ]] && echo "🧩 Broken packages:    ✅ None"
-
-    # Missing pak.conf check
-    MISSING=0
-    for pkg in "$BITEY/software/"*; do
-        [[ -d "$pkg" ]] || continue
-        if [[ ! -f "$pkg/pak.conf" ]]; then
-            echo "📑 Missing pak.conf:   ❌ $(basename "$pkg")"
-            MISSING=1
-        fi
-    done
-    [[ $MISSING -eq 0 ]] && echo "📑 Missing pak.conf:   ✅ All present"
-
-    # Disk usage
-    USAGE=$(du -sh "$BITEY" 2>/dev/null | cut -f1)
-    echo "📁 Disk usage:         💾 $USAGE used by Bitey"
-
-    # Permission check
-    if [[ "$(id -u)" -eq 0 ]]; then
-        echo "🔧 Data access:        ✅ Safe (running as root)"
-    elif [[ -w "$BITEY" ]]; then
-        echo "🔧 Data access:        ⚠️ Unsafe (use with caution)"
-    else
-        echo "🔧 Data access:        ❌ None (no write access)"
-    fi
-
-
-    # Remotes
-    if [[ -d "$BITEY/addons" ]]; then
-        REMOTES=$(find "$BITEY/addons" -maxdepth 1 -type d -name "remote-*" | wc -l)
-        if [[ "$REMOTES" -gt 0 ]]; then
-            echo "🌐 Remotes configured: ✅ $REMOTES remotes"
-        else
-            echo "🌐 Remotes configured: ❌ None found"
-        fi
-    else
-        echo "🌐 Remotes configured: ❌ None found"
-    fi
-
-    echo
-    echo "✅ All checks complete."
-    exit 0
-fi
-
-if [[ "$1" == "repair" ]]; then
-    if [[ ! "$2" == "--nolock" ]]; then
-        if [[ -f "$BITEY/lock" ]]; then
-            echo "🔒 Bitey is locked. Run with '--nolock' if you are sure no proccess editing Bitey Data is present."
-            exit 1
-        fi
-    fi
-
-    echo "🛠 Starting Bitey repair process..."
-    sudo touch "$BITEY/lock"
-
-    echo "🔄 Updating packages to fix real ones..."
-    sudo bitey unlock
-    sudo bitey update
-    sudo bitey lock
-
-    echo "🧹 Cleaning up fake/broken packages..."
-    for pkg in "$BITEY/software/"*; do
-        [[ -d "$pkg" ]] || continue
-        pkgname=$(basename "$pkg")
-
-        if [[ -d "$pkg/.git" ]]; then
-            pushd "$pkg" >/dev/null || continue
-        if ! git pull --quiet; then
-            echo "❌ $pkgname is broken (git pull failed). Removing..."
-            rm -rf "$pkg"
-            sudo sed -i "\|$pkg\$|d" "$BITEY/project/bitey_paths"
-            sudo sed -i "\|$pkg/bin\$|d" "$BITEY/project/biteyrc"
-            popd >/dev/null
-            continue
-        fi
-        popd >/dev/null
-        fi
-
-        # Check for missing install.sh or pak.conf
-        if [[ ! -f "$pkg/project/install.sh" || ! -f "$pkg/pak.conf" ]]; then
-            echo "❌ $pkgname is fake or broken (missing install.sh or pak.conf). Removing..."
-            rm -rf "$pkg"
-            sudo sed -i "\|$pkg\$|d" "$BITEY/project/bitey_paths"
-            sudo sed -i "\|$pkg/bin\$|d" "$BITEY/project/biteyrc"
-        fi
-    done
-
-
-
-    echo "🔓 Unlocking Bitey..."
-    sudo rm "$BITEY/lock"
-
-    echo "✅ Bitey repair complete. Sending doctor report..."
-    sudo bitey doctor
-    exit 0
-fi
-
-cf_input() {
-    if command -v reader &>/dev/null; then
-        REPLY=$(reader "$1" -e "$HISTFILE")
-        echo "$REPLY" >> "$HISTFILE"
-        history -s "$REPLY"
-    else
-        echo -e "⚠️  🐶 WAIT---! You're not using \033[1mreader\033[0m???\n"
-        echo -e "Well, sucks... but you can run \033[1minstall main coffee\033[0m if you change your mind, heh..."
-        echo -e "Because you're not using reader, the prompt will use printf with read...\n"
-        printf "🍫 bitey> "
-        read
-        REPLY=$REPLY  # assign for consistency
-    fi
-}
-
-bitey_shell() {
-  local HISTFILE="$HOME/.biteysh/history"
-  echo -e "🐶 Welcome to 🍫 Bitey $VERSION Shell!\n🐾 Type 'help' for Bitey Help."
-  if [[ ! -d "$HOME/.biteysh" ]]; then
-      mkdir "$HOME/.biteysh"
-  fi
-  if [[ ! -f "$HISTFILE" ]]; then
-      touch "$HISTFILE"
-  fi
-  history -r "$HISTFILE"
-  while true; do
-    cf_input "🍫 bitey> "
-    [[ -z "$cmd" ]] && continue
-
-    case "$cmd" in
-      exit)
-        echo "🐶 Exiting Bitey Shell."
-        break
-        ;;
-      clear)
-        clear
-        ;;
-      history)
-        history
-        ;;
-      reload)
-        echo "🔁 Reloading Bitey Shell..."
-        bitey_shell
-        return 0
-        ;;
-      help)
-        bitey --help
-        ;;
-      version)
-        bitey --version
-        ;;
-      --help)
-        bitey --help
-        ;;
-      --version)
-        bitey --version
-        ;;
-      "")
-        continue
-        ;;
-      *)
-        sudo bitey $cmd || true
-        ;;
-    esac
-  done
-}
-
-if [[ "$1" == "shell" ]]; then
-    bitey_shell
-    exit 0
-fi
-
-if [[ "$1" == "reinstall" ]]; then
-    if [[ -f "$BITEY/lock" ]]; then
-        echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
-        exit 1
-    fi
-
-    REMOTE_NAME="$2"
-    shift 2  # Remove the first two args (install + remote)
-
-    for SOFTWARE_NAME in "$@"; do
-        echo "📦 Bitzy is reinstalling $SOFTWARE_NAME..."
-        echo
-        sudo bitey remove "$SOFTWARE_NAME"
-        sudo bitey install "$REMOTE_NAME" "$SOFTWARE_NAME"
-        echo
-        echo "✅ Bitzy has reinstalled $SOFTWARE_NAME."
-    done
-
-    exit 0
-fi
+#!/usr/bin/env ruby
+
+require 'fileutils'
+
+VERSION = '1.8'
+BITEY = '/usr/bitey'
+
+# Helpers
+def locked?
+  File.exist?("#{BITEY}/lock")
+end
+
+def ensure_unlocked
+  if locked?
+    puts "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
+    exit 1
+  end
+end
+
+def run_cmd(cmd)
+  puts "=> #{cmd}"
+  system(cmd) || abort("❌ Command failed: #{cmd}")
+end
+
+# Commands
+case ARGV[0]
+when 'install'
+  ensure_unlocked
+  system('sudo bitey lock')
+
+  Dir.mkdir("#{BITEY}/software") unless Dir.exist?("#{BITEY}/software")
+
+  remote_name = ARGV[1]
+  packages = ARGV[2..]
+  remote_addon = "#{BITEY}/addons/remote-#{remote_name}"
+  remote_script = File.join(remote_addon, 'remote.sh')
+
+  unless File.file?(remote_script)
+    abort("❌ Bitzy doesn't know where to go... (Remote '#{remote_name}' not found or invalid.)")
+  end
+
+  remote = nil
+  eval(File.read(remote_script))
+
+  unless defined?(REMOTE)
+    abort("❌ Bitzy doesn't know where to go... REMOTE not set in #{remote_script}.")
+  end
+
+  packages.each do |pkg|
+    install_path = "#{BITEY}/software/#{pkg}"
+
+    if Dir.exist?(install_path)
+      puts "⚠️ Bitzy found out that #{pkg} is already installed. Skipping..."
+      next
+    end
+
+    puts "📦 Bitzy is installing #{pkg}..."
+    run_cmd("sudo git clone #{REMOTE}/#{pkg} #{install_path}")
+
+    unless File.exist?("#{install_path}/project/paths.txt")
+      puts "❌ Installation invalid."
+      FileUtils.rm_rf(install_path)
+      next
+    end
+
+    depends_file = "#{install_path}/project/depends.txt"
+    if File.exist?(depends_file)
+      eval(File.read(depends_file))
+      system('sudo bitey unlock')
+      DEPENDS&.each do |dep|
+        puts "📦 Installing dependency #{dep}..."
+        run_cmd("sudo bitey install #{dep}")
+      end
+      system('sudo bitey lock')
+    end
+
+    run_cmd("sudo bash #{install_path}/project/install.sh")
+    run_cmd("sudo chmod +x #{install_path}/bin/*")
+
+    File.open("#{BITEY}/project/bitey_paths", 'a') { |f| f.puts install_path }
+    File.open("#{BITEY}/project/biteyrc", 'a') { |f| f.puts "#{install_path}/bin" }
+    puts "✅ Bitzy installed #{pkg}."
+  end
+
+  system('sudo bitey unlock')
+
+when 'remove'
+  ensure_unlocked
+  system('sudo bitey lock')
+  ARGV[1..].each do |pkg|
+    install_path = "#{BITEY}/software/#{pkg}"
+    unless Dir.exist?(install_path)
+      puts "❌ Bitzy thinks #{pkg} is not installed."
+      next
+    end
+
+    Dir.chdir(install_path) do
+      if File.exist?('project/remove.sh')
+        puts "🔧 Bitzy is running remove script for #{pkg}..."
+        run_cmd('sudo bash project/remove.sh')
+      end
+    end
+
+    puts "🗑️ Bitzy is removing #{pkg}..."
+    FileUtils.rm_rf(install_path)
+
+    ["#{BITEY}/project/bitey_paths", "#{BITEY}/project/biteyrc"].each do |file|
+      next unless File.exist?(file)
+      content = File.readlines(file).reject { |line| line.strip == install_path || line.strip == "#{install_path}/bin" }
+      File.write(file, content.join)
+    end
+
+    puts "✅ Bitzy removed #{pkg}."
+  end
+  system('sudo bitey unlock')
+
+when 'update'
+  ensure_unlocked
+  system('sudo bitey lock')
+
+  bitey_paths = File.readlines("#{BITEY}/project/bitey_paths").map(&:strip)
+  bitey_paths.each do |path|
+    next unless Dir.exist?(path)
+    Dir.chdir(path) do
+      puts "🔄 Bitzy is updating path #{path}..."
+      run_cmd('sudo git reset --hard HEAD')
+      run_cmd('sudo git pull')
+      run_cmd('sudo chmod +x bin/*')
+      run_cmd('sudo bash project/update.sh') if File.exist?('project/update.sh')
+    end
+  end
+
+  File.write("#{BITEY}/project/bitey_paths", bitey_paths.join("\n") + "\n")
+  File.write("#{BITEY}/project/biteyrc", bitey_paths.map { |p| "#{p}/bin" }.join("\n") + "\n")
+
+  system('sudo bitey unlock')
+
+when 'list'
+  dir = "#{BITEY}/software"
+  if !Dir.exist?(dir) || Dir.empty?(dir)
+    puts "❌ No packages installed."
+  else
+    puts "📦 Installed Bitey packages:"
+    Dir.each_child(dir) { |entry| puts " - #{entry}" if File.directory?(File.join(dir, entry)) }
+  end
+
+when '--help', nil
+  puts <<~HELP
+    🐶 Hi, it's Bitzy! Here's what I can do:
+    📦 install <remote> <package>...  Install packages from a remote.
+    📦 remove <package>...            Remove installed packages.
+    📦 list                           List all installed packages.
+    📦 update                         Update all installed packages.
+    📦 info <package>                Show info about a package.
+    🔐 lock | unlock                 Lock or unlock Bitey.
+    🩺 doctor                         Run installation diagnostics.
+    🐚 shell-related: shell, exit, clear, history, reload, help, version
+    ❓ --help                        Show this help message.
+    📄 --version                    Show version.
+  HELP
+
+when '--version'
+  puts "🍫 Bitey #{VERSION}"
+
+when 'info'
+  pkg = ARGV[1]
+  pkg_dir = "#{BITEY}/software/#{pkg}"
+  unless pkg && File.exist?("#{pkg_dir}/pak.conf")
+    abort("❌ Package '#{pkg}' is not installed.")
+  end
+  conf = File.read("#{pkg_dir}/pak.conf")
+  eval(conf)
+  puts "📦 Package Info: #{pkg}"
+  puts "Name: #{defined?(PACKAGE_NAME) ? PACKAGE_NAME : pkg}"
+  puts "Version: #{defined?(PACKAGE_VERSION) ? PACKAGE_VERSION : 'Unknown'}"
+  puts "Maintainer: #{defined?(PACKAGE_MAINTAINER) ? PACKAGE_MAINTAINER : 'Unknown'}"
+  puts "Description: #{defined?(PACKAGE_DESCRIPTION) ? PACKAGE_DESCRIPTION : 'No description'}"
+  puts "Location: #{pkg_dir}"
+
+when 'lock'
+  FileUtils.touch("#{BITEY}/lock") unless locked?
+
+when 'unlock'
+  FileUtils.rm_f("#{BITEY}/lock") if locked?
+
+when 'doctor'
+  puts "🩺 Bitey Doctor Report"
+  puts ""
+  puts "🔐 Lock status:        #{locked? ? '❌ Locked' : '✅ Unlocked'}"
+  puts "📂 BITEY directory:    #{Dir.exist?(BITEY) ? "✅ #{BITEY}" : '❌ Not found'}"
+
+  software_dir = "#{BITEY}/software"
+  if Dir.exist?(software_dir)
+    pkgs = Dir.children(software_dir).select { |d| File.directory?(File.join(software_dir, d)) }
+    puts "📦 Installed packages: ✅ #{pkgs.size} packages found"
+    broken = pkgs.select { |p| !File.exist?("#{software_dir}/#{p}/project/install.sh") }
+    broken.each { |b| puts "🧩 Broken package:     ❌ #{b} (no install.sh)" }
+    puts "🧩 Broken packages:    ✅ None" if broken.empty?
+  else
+    puts "📦 Installed packages: ❌ None"
+  end
+
+else
+  puts "🐶 Unknown command: #{ARGV[0]}. Run 'bitey --help' for usage."
+end
