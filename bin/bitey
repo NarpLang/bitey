@@ -1,69 +1,497 @@
+#!/usr/bin/env ruby
+require 'fileutils'
 
-if [[ "$1" == "remove" ]]; then
-    if [[ -f "$BITEY/lock" ]]; then
-        echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
+BITEY_DIR = '/usr/bitey'
+LOCK_FILE = File.join(BITEY_DIR, 'lock')
+SOFTWARE_DIR = File.join(BITEY_DIR, 'software')
+PROJECT_DIR = File.join(BITEY_DIR, 'project')
+PATHS_FILE = File.join(PROJECT_DIR, 'bitey_paths')
+RC_FILE = File.join(PROJECT_DIR, 'biteyrc')
+
+def locked?
+  File.exist?(LOCK_FILE)
+end
+
+def lock
+  FileUtils.touch(LOCK_FILE)
+end
+
+def unlock
+  FileUtils.rm_f(LOCK_FILE)
+end
+
+def install(remote_name, *packages)
+  if locked?
+    puts "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
+    exit 1
+  end
+
+  lock
+
+  FileUtils.mkdir_p(SOFTWARE_DIR) unless Dir.exist?(SOFTWARE_DIR)
+
+  packages.each do |package|
+    remote_addon = File.join(BITEY_DIR, 'addons', "remote-#{remote_name}")
+    install_path = File.join(SOFTWARE_DIR, package)
+
+    remote_script = File.join(remote_addon, 'remote.sh')
+    unless File.exist?(remote_script)
+      puts "❌ Bitzy doesn't know where to go... (Remote '#{remote_name}' not found or invalid.)"
+      exit 1
+    end
+
+    # Source the remote.sh script and extract the REMOTE variable
+    remote = nil
+    File.readlines(remote_script).each do |line|
+      if line.strip.start_with?('REMOTE=')
+        remote = line.strip.split('=', 2)[1].gsub('"', '')
+        break
+      end
+    end
+
+    if remote.nil? || remote.empty?
+      puts "❌ Bitzy doesn't know where to go, nothing on the information paper... (REMOTE variable not set in #{remote_script}.)"
+      exit 1
+    end
+
+    if Dir.exist?(install_path)
+      puts "⚠️ Bitzy found out that #{package} is already installed at #{install_path}. Skipping..."
+      next
+    end
+
+    puts "📦 Bitzy is installing #{package}..."
+    system("git clone #{remote}/#{package} #{install_path}") or abort("❌ Installation failure.")
+
+    Dir.chdir(install_path) do
+      unless File.exist?('project/paths.txt')
+        puts "❌ Installation invalid."
+        FileUtils.rm_rf(install_path)
         exit 1
-    fi
-    sudo bitey lock
-    shift 1  # Remove "remove" argument
+      end
 
-    for SOFTWARE_NAME in "$@"; do
-        INSTALL_PATH="$BITEY/software/$SOFTWARE_NAME"
+      depends_file = 'project/depends.txt'
+      if File.exist?(depends_file)
+        dependencies = []
+        File.readlines(depends_file).each do |line|
+          dependencies << line.strip unless line.strip.empty?
+        end
 
-        if [[ ! -d "$INSTALL_PATH" ]]; then
-            echo "❌ Bitzy thinks $SOFTWARE_NAME is not installed."
-            continue
-        fi
+        unlock
+        dependencies.each do |dep|
+          puts "📦 Installing dependency #{dep}..."
+          system("sudo bitey install #{dep}")
+        end
+        lock
+      end
 
-        cd "$INSTALL_PATH" || continue
+      system("bash project/install.sh")
+      Dir.glob('bin/*').each { |file| FileUtils.chmod('+x', file) }
 
-        if [[ -f project/remove.sh ]]; then
-            echo "🔧 Bitzy is running remove script for $SOFTWARE_NAME..."
-            sudo bash "project/remove.sh"
-        else
-            echo "⚠️ Bitzy didn't find a remove script, continuing with raw removal."
-        fi
+      File.open(File.join(BITEY_DIR, 'project', 'bitey_paths'), 'a') { |f| f.puts install_path }
+      File.open(File.join(BITEY_DIR, 'project', 'biteyrc'), 'a') { |f| f.puts File.join(install_path, 'bin') }
 
-        echo "🗑️ Bitzy is removing $SOFTWARE_NAME..."
-        sudo rm -rf "$INSTALL_PATH"
+      puts "✅ Bitzy installed #{package}."
+    end
+  end
 
-        # Clean bitey_paths and biteyrc
-        sudo sed -i "\|$INSTALL_PATH\$|d" "$BITEY/project/bitey_paths"
-        sudo sed -i "\|$INSTALL_PATH/bin\$|d" "$BITEY/project/biteyrc"
+  unlock
+end
 
-        echo "✅ Bitzy removed $SOFTWARE_NAME."
-        cd - > /dev/null
-    done
+def remove(*packages)
+  if locked?
+    puts "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
+    exit 1
+  end
 
-    sudo bitey unlock
+  lock
+
+  packages.each do |software|
+    install_path = File.join(SOFTWARE_DIR, software)
+
+    unless Dir.exist?(install_path)
+      puts "❌ Bitzy thinks #{software} is not installed."
+      next
+    end
+
+    Dir.chdir(install_path) do
+      if File.exist?('project/remove.sh')
+        puts "🔧 Bitzy is running remove script for #{software}..."
+        run_cmd("sudo bash project/remove.sh")
+      else
+        puts "⚠️ Bitzy didn't find a remove script, continuing with raw removal."
+      end
+    end
+
+    puts "🗑️ Bitzy is removing #{software}..."
+    FileUtils.rm_rf(install_path)
+
+    # Clean bitey_paths and biteyrc
+    [PATHS_FILE, RC_FILE].each do |file|
+      next unless File.exist?(file)
+      lines = File.readlines(file).reject { |line| line.strip == install_path || line.strip == File.join(install_path, 'bin') }
+      File.write(file, lines.join)
+    end
+
+    puts "✅ Bitzy removed #{software}."
+  end
+
+  unlock
+end
+
+def update
+  if locked?
+    puts "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
+    exit 1
+  end
+
+  lock
+
+  bitey_paths = File.exist?(PATHS_FILE) ? File.readlines(PATHS_FILE, chomp: true) : []
+  biteyrc = File.exist?(RC_FILE) ? File.readlines(RC_FILE, chomp: true) : []
+
+  bitey_paths.each do |path|
+    next unless Dir.exist?(path)
+
+    Dir.chdir(path) do
+      puts "🔄 Bitzy is updating path #{path}..."
+      run_cmd("sudo git reset --hard HEAD")
+      run_cmd("sudo git pull")
+      run_cmd("sudo chmod +x bin/*") if Dir.exist?('bin')
+
+      if File.exist?('project/update.sh')
+        puts "🔧 Bitzy is running update script..."
+        run_cmd("sudo bash project/update.sh")
+      end
+    end
+  end
+
+  # Rewrite files (to preserve updated structure)
+  File.write(PATHS_FILE, bitey_paths.join("\n") + "\n")
+  File.write(RC_FILE, biteyrc.join("\n") + "\n")
+
+  unlock
+end
+
+def list_packages
+  unless Dir.exist?(SOFTWARE_DIR)
+    puts "❌ No packages installed."
+    exit 1
+  end
+
+  puts "📦 Installed Bitey packages:"
+  Dir.entries(SOFTWARE_DIR).each do |entry|
+    next if ['.', '..'].include?(entry)
+    path = File.join(SOFTWARE_DIR, entry)
+    puts " - #{entry}" if File.directory?(path)
+  end
+end
+
+def print_help
+  puts <<~HELP
+    🐶 Hi, it's Bitzy! I wrote down some commands you need to know down here!
+    💡 Bitey Help
+    ➡️ Usage: bitey [OPTIONS]
+
+    📦 Packages:
+        install <remote> <package> - Install a package.
+        remove <package> - Remove a package.
+        list - List installed packages.
+        update - Update all packages.
+        info <package> - See the package information.
+
+    🐚 Shell:
+        shell - Open a Bitey Shell session.
+        exit - Quit the Shell.
+        reload - Reload the Shell.
+        clear - Clear the Shell.
+        history - Read your history.
+        help - See the help message.
+        version - Check the version of your Bitey installation.
+
+    🔐 Lock:
+        lock - Lock Bitey.
+        unlock - Unlock Bitey.
+
+    💿 Installation:
+        doctor - Analyze your installation of Bitey.
+        repair - Repair your installation of Bitey.
+        --version - Check the version of your Bitey Installation.
+
+    ❓ Help:
+        --help - See the help message.
+
+    🐾 Tip: Use the Bitey Shell (run `bitey shell`) to manage everything faster!
+  HELP
+end
+
+def info(package)
+  if package.nil? || package.strip.empty?
+    puts "❌ Please provide a package name."
+    exit 1
+  end
+
+  package_dir = File.join(SOFTWARE_DIR, package)
+  conf_file = File.join(package_dir, 'pak.conf')
+
+  unless File.exist?(conf_file)
+    puts "❌ Package '#{package}' is not installed."
+    exit 1
+  end
+
+  # Load variables from pak.conf
+  conf = {}
+  File.readlines(conf_file).each do |line|
+    next unless line.include?('=')
+    key, value = line.strip.split('=', 2)
+    conf[key] = value.gsub(/^['"]|['"]$/, '') # remove quotes
+  end
+
+  puts "📦 Package Info: #{package}"
+  puts "Name: #{conf['PACKAGE_NAME'] || package}"
+  puts "Version: #{conf['PACKAGE_VERSION'] || 'Unknown'}"
+  puts "Maintainer: #{conf['PACKAGE_MAINTAINER'] || 'Unknown'}"
+  puts "Description: #{conf['PACKAGE_DESCRIPTION'] || 'No description'}"
+  puts "Location: #{package_dir}"
+end
+
+def lock
+  lock_file = File.join(BITEY_DIR, "lock")
+  if File.exist?(lock_file)
     exit 0
-fi
+  end
+  system("sudo", "touch", lock_file)
+end
 
-if [[ "$1" == "update" ]]; then
-    if [[ -f "$BITEY/lock" ]]; then
-        echo "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
-        exit 1
-    fi
-    sudo bitey lock
-    mapfile -t BITEYRC < $BITEY/project/biteyrc
-    mapfile -t BITEY_PATHS < $BITEY/project/bitey_paths
-    for path in "${BITEY_PATHS[@]}"; do
-        if [ -d "$path" ]; then
-            cd "$path" || continue
-            
-            echo "🔄 Bitzy is updating path $path..."
-            sudo git reset --hard HEAD
-            sudo git pull
-            sudo chmod +x bin/*
-            if [[ -f project/update.sh ]]; then
-                echo "🔧 Bitzy is running update script..."
-                sudo bash "project/update.sh"
-            fi
-            cd - > /dev/null || exit 0
-        fi
-    done
-    printf "%s\n" "${BITEY_PATHS[@]}" | sudo tee "$BITEY/project/bitey_paths" > /dev/null
-    printf "%s\n" "${BITEYRC[@]}" | sudo tee "$BITEY/project/biteyrc" > /dev/null
-    sudo bitey unlock
+def unlock
+  lock_file = File.join(BITEY_DIR, "lock")
+  unless File.exist?(lock_file)
     exit 0
-fi
+  end
+  system("sudo", "rm", lock_file)
+end
+
+def doctor
+  puts "🩺 Bitey Doctor Report"
+  puts
+
+  # Lock status
+  if File.exist?(File.join(BITEY_DIR, "lock"))
+    puts "🔐 Lock status:        ❌ Locked"
+  else
+    puts "🔐 Lock status:        ✅ Unlocked"
+  end
+
+  # Root directory
+  if Dir.exist?(BITEY_DIR)
+    puts "📂 BITEY directory:    ✅ #{BITEY_DIR}"
+  else
+    puts "📂 BITEY directory:    ❌ Not found"
+  end
+
+  # Installed packages
+  if Dir.exist?(SOFTWARE_DIR)
+    pkgs = Dir.children(SOFTWARE_DIR).select { |e| File.directory?(File.join(SOFTWARE_DIR, e)) }
+    puts "📦 Installed packages: ✅ #{pkgs.count} packages found"
+  else
+    puts "📦 Installed packages: ❌ None"
+  end
+
+  # Broken packages
+  broken_pkgs = []
+  Dir.glob("#{SOFTWARE_DIR}/*").each do |pkg_dir|
+    next unless File.directory?(pkg_dir)
+    unless File.exist?(File.join(pkg_dir, "project", "install.sh"))
+      broken_pkgs << File.basename(pkg_dir)
+      puts "🧩 Broken package:     ❌ #{File.basename(pkg_dir)} (no install.sh)"
+    end
+  end
+  puts "🧩 Broken packages:    ✅ None" if broken_pkgs.empty?
+
+  # Missing pak.conf
+  missing_conf = []
+  Dir.glob("#{SOFTWARE_DIR}/*").each do |pkg_dir|
+    next unless File.directory?(pkg_dir)
+    unless File.exist?(File.join(pkg_dir, "pak.conf"))
+      missing_conf << File.basename(pkg_dir)
+      puts "📑 Missing pak.conf:   ❌ #{File.basename(pkg_dir)}"
+    end
+  end
+  puts "📑 Missing pak.conf:   ✅ All present" if missing_conf.empty?
+
+  # Disk usage
+  usage = `du -sh "#{BITEY_DIR}" 2>/dev/null`.split("\t").first
+  puts "📁 Disk usage:         💾 #{usage || "Unknown"} used by Bitey"
+
+  # Permission check
+  if Process.uid == 0
+    puts "🔧 Data access:        ✅ Safe (running as root)"
+  elsif File.writable?(BITEY_DIR)
+    puts "🔧 Data access:        ⚠️ Unsafe (use with caution)"
+  else
+    puts "🔧 Data access:        ❌ None (no write access)"
+  end
+
+  # Remotes
+  remotes_dir = File.join(BITEY_DIR, "addons")
+  if Dir.exist?(remotes_dir)
+    remotes = Dir.glob("#{remotes_dir}/remote-*").select { |d| File.directory?(d) }
+    if remotes.any?
+      puts "🌐 Remotes configured: ✅ #{remotes.count} remotes"
+    else
+      puts "🌐 Remotes configured: ❌ None found"
+    end
+  else
+    puts "🌐 Remotes configured: ❌ None found"
+  end
+
+  puts
+  puts "✅ All checks complete."
+end
+
+def repair
+  puts "🔧 Bitey Repair Utility"
+  puts
+
+  repaired = 0
+  Dir.glob("#{SOFTWARE_DIR}/*").each do |pkg_dir|
+    next unless File.directory?(pkg_dir)
+    pkg = File.basename(pkg_dir)
+    install_script = File.join(pkg_dir, "project", "install.sh")
+    pak_conf = File.join(pkg_dir, "pak.conf")
+
+    if !File.exist?(install_script) || !File.exist?(pak_conf)
+      puts "⚠️  #{pkg} is broken."
+
+      print "   → Do you want to remove this package? [y/N]: "
+      choice = $stdin.gets.strip.downcase
+      if choice == "y"
+        system("sudo", "rm", "-rf", pkg_dir)
+        puts "   ✅ Removed #{pkg}"
+        repaired += 1
+      else
+        puts "   ❌ Skipped #{pkg}"
+      end
+    end
+  end
+
+  if repaired > 0
+    puts
+    puts "✅ Repair complete. #{repaired} package(s) removed."
+  else
+    puts "✅ No broken packages found."
+  end
+end
+
+def shell
+  puts "🦴 Welcome to Bitey Shell!"
+  puts "Type 'help' for available commands. Type 'exit' to quit."
+
+  loop do
+    print "bitey> "
+    input = $stdin.gets
+    break if input.nil?
+
+    input.strip!
+    next if input.empty?
+
+    case input
+    when 'exit'
+      puts "👋 Exiting shell."
+      break
+    when 'clear'
+      system("clear")
+    else
+      # Fake ARGV for internal dispatch
+      original_argv = ARGV.dup
+      ARGV.replace(input.split)
+      command = ARGV.shift
+
+      case command
+      when 'install'
+        install(ARGV.shift, *ARGV)
+      when 'remove'
+        remove(*ARGV)
+      when 'update'
+        update
+      when 'list'
+        list_packages
+      when 'info'
+        info(ARGV[0])
+      when 'lock'
+        lock
+      when 'unlock'
+        unlock
+      when 'doctor'
+        doctor
+      when 'repair'
+        repair
+      when 'help', '--help'
+        print_help
+      else
+        puts "❓ Unknown command: #{command}"
+      end
+
+      ARGV.replace(original_argv)
+    end
+  end
+end
+
+case command
+when 'install'
+  remote_name = ARGV.shift
+  install(remote_name, *ARGV)
+when 'remove'
+  remove(*ARGV)
+when 'update'
+  update
+when 'list'
+  list_packages
+when '--help', 'help'
+  print_help
+when 'info'
+  info(ARGV[0])
+when 'lock'
+  lock
+when 'unlock'
+  unlock
+when 'doctor'
+  doctor
+when 'repair'
+  repair
+when 'shell'
+  shell
+else
+  puts "❓ Unknown command: #{command}"
+end
+
+# Main execution starts here
+if ARGV.empty?
+  puts "🐶 Run 'bitey --help' for usage."
+  exit 0
+end
+
+command = ARGV.shift
+
+case command
+when 'install'
+  remote_name = ARGV.shift
+  install(remote_name, *ARGV)
+when 'remove'
+  remove(*ARGV)
+when 'update'
+  update
+when 'list'
+  list_packages
+when '--help', 'help'
+  print_help
+when 'info'
+  info(ARGV[0])
+when 'lock'
+  lock
+when 'unlock'
+  unlock
+when 'doctor'
+  doctor
+else
+  puts "❓ Unknown command: #{command}"
+end
