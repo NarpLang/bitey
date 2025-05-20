@@ -1,6 +1,6 @@
 ![LOGO](/media/bitey-logo.png)
 # 🍫 Bitey
-**A full package manager** using Git.
+**A full package manager** using Git and Ruby.
 
 # Installation
 Use CURL to install Bitey:
