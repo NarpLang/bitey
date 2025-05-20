@@ -457,6 +457,10 @@ when 'unlock'
   unlock
 when 'doctor'
   doctor
+when 'repair'
+  repair
+when 'shell'
+  shell
 else
   puts "❓ Unknown command: #{command}"
 end
