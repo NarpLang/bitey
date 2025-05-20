@@ -21,7 +21,6 @@ def unlock
 end
 
 def run_cmd(command)
-  puts "🛠️ Running: #{command}"
   success = system(command)
   unless success
     puts "❌ Command failed: #{command}"
