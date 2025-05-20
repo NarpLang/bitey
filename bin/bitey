@@ -20,6 +20,16 @@ def unlock
   FileUtils.rm_f(LOCK_FILE)
 end
 
+def run_cmd(command)
+  puts "🛠️ Running: #{command}"
+  success = system(command)
+  unless success
+    puts "❌ Command failed: #{command}"
+    unlock
+    exit 1
+  end
+end
+
 def install(remote_name, *packages)
   if locked?
     puts "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
@@ -252,22 +262,6 @@ def info(package)
   puts "Maintainer: #{conf['PACKAGE_MAINTAINER'] || 'Unknown'}"
   puts "Description: #{conf['PACKAGE_DESCRIPTION'] || 'No description'}"
   puts "Location: #{package_dir}"
-end
-
-def lock
-  lock_file = File.join(BITEY_DIR, "lock")
-  if File.exist?(lock_file)
-    exit 0
-  end
-  system("sudo", "touch", lock_file)
-end
-
-def unlock
-  lock_file = File.join(BITEY_DIR, "lock")
-  unless File.exist?(lock_file)
-    exit 0
-  end
-  system("sudo", "rm", lock_file)
 end
 
 def doctor
