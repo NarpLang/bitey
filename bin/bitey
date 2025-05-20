@@ -436,34 +436,6 @@ def shell
   end
 end
 
-case command
-when 'install'
-  remote_name = ARGV.shift
-  install(remote_name, *ARGV)
-when 'remove'
-  remove(*ARGV)
-when 'update'
-  update
-when 'list'
-  list_packages
-when '--help', 'help'
-  print_help
-when 'info'
-  info(ARGV[0])
-when 'lock'
-  lock
-when 'unlock'
-  unlock
-when 'doctor'
-  doctor
-when 'repair'
-  repair
-when 'shell'
-  shell
-else
-  puts "❓ Unknown command: #{command}"
-end
-
 # Main execution starts here
 if ARGV.empty?
   puts "🐶 Run 'bitey --help' for usage."
