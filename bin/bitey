@@ -34,11 +34,9 @@ def update_remotes
   sleep(0.3)
   puts "---"
   puts "🍫 Bitey Main Remote (main) ..."
-  run_cmd("cd /usr/bitey/software/remote-main")
-  run_cmd("sudo git pull")
+  run_cmd("sudo git -C /usr/bitey/software/remote-main pull")
   puts "🔧 Bitey Developer Remote (dev) ..."
-  run_cmd("cd /usr/bitey/software/remote-dev")
-  run_cmd("sudo git pull")
+  run_cmd("sudo git -C /usr/bitey/software/remote-dev pull")
   puts "---"
 end
 
@@ -51,16 +49,7 @@ def install(remote_name, *packages)
   lock
   FileUtils.mkdir_p(SOFTWARE_DIR) unless Dir.exist?(SOFTWARE_DIR)
 
-  puts "🦴 Updating Repositories..."
-  sleep(0.3)
-  puts "---"
-  puts "🍫 Bitey Main Remote (main) ..."
-  run_cmd("cd /usr/bitey/software/remote-main")
-  run_cmd("sudo git pull")
-  puts "🔧 Bitey Developer Remote (dev) ..."
-  run_cmd("cd /usr/bitey/software/remote-dev")
-  run_cmd("sudo git pull")
-  puts "---"
+  update_remotes
 
   puts "ℹ️ You are about to make changes in the system.\n\n⬇️ Installing:"
   packages.each { |pkg| puts "  - #{pkg}" }
