@@ -444,7 +444,7 @@ def shell
   end
 end
 
-def search(args)
+def search(*args)
   require 'optparse'
 
   options = { update: false }
