@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+
+require 'fileutils'
+require 'uri'
+
+# ---- Configuration ----
+project_dir = "project"
+base_dir = File.expand_path("~/.local/bitey")
+
+# ---- Argument Parsing ----
+repo_url = ARGV[0]
+if repo_url.nil?
+  puts "Usage: ruby bitey-pull.rb <git-repo-url>"
+  exit 1
+end
+
+# ---- Extract repo name ----
+begin
+  repo_name = File.basename(URI.parse(repo_url).path, ".git")
+rescue
+  puts "Invalid Git URL."
+  exit 1
+end
+
+target_dir = File.join(base_dir, repo_name)
+
+# ---- Clone or update ----
+unless Dir.exist?(File.join(target_dir, ".git"))
+  puts "Cloning repository..."
+  system("git clone --filter=blob:none --no-checkout #{repo_url} #{target_dir}")
+  Dir.chdir(target_dir) do
+    system("git sparse-checkout init --cone")
+    system("git sparse-checkout set #{project_dir}")
+    system("git checkout")
+  end
+else
+  puts "Repository exists. Pulling updates..."
+  system("git -C #{target_dir} sparse-checkout set #{project_dir}")
+  system("git -C #{target_dir} pull")
+end
