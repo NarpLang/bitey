@@ -7,11 +7,10 @@ SOFTWARE_DIR = File.join(BITEY_DIR, 'software')
 PROJECT_DIR = File.join(BITEY_DIR, 'project')
 PATHS_FILE = File.join(PROJECT_DIR, 'bitey_paths')
 RC_FILE = File.join(PROJECT_DIR, 'biteyrc')
-path = File.expand_path('~/.local/bitey')
+LOCAL_PATH = File.expand_path('~/.local/bitey')
 
-unless Dir.exist?(path)
-  FileUtils.mkdir_p(path)
-  puts "✅ Directory created at #{path}"
+unless Dir.exist?(LOCAL_PATH)
+  FileUtils.mkdir_p(LOCAL_PATH)
 end
 
 def locked?
@@ -62,7 +61,7 @@ def install(remote_name, *packages)
 
   puts "☑️ Dependencies:"
   packages.each do |package|
-    depends_file = File.join(BITEY_DIR, 'addons', "remote-#{remote_name}", package, 'project/depends.txt')
+    depends_file = File.join(LOCAL_PATH, package, "project/depends.txt")
     if File.exist?(depends_file)
       deps = File.readlines(depends_file).map(&:strip).reject(&:empty?)
       puts "  #{package}: " + (deps.empty? ? "None" : deps.join(", "))
