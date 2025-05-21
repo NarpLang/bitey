@@ -42,11 +42,11 @@ def install(remote_name, *packages)
   sleep(0.3)
   puts "---"
   puts "🍫 Bitey Main Repository (main) ..."
-  run_cmd(cd /usr/bitey/software/remote-main)
-  run_cmd(git pull)
+  run_cmd("cd /usr/bitey/software/remote-main")
+  run_cmd("sudo git pull")
   puts "🔧 Bitey Developer Repository (#{remote_name}) ..."
-  run_cmd(cd /usr/bitey/software/remote-dev)
-  run_cmd(git pull)
+  run_cmd("cd /usr/bitey/software/remote-dev")
+  run_cmd("sudo git pull")
   puts "---"
 
   puts "ℹ️ You are about to make changes in the system.\n\n⬇️ Installing:"
