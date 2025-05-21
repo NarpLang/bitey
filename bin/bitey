@@ -7,6 +7,12 @@ SOFTWARE_DIR = File.join(BITEY_DIR, 'software')
 PROJECT_DIR = File.join(BITEY_DIR, 'project')
 PATHS_FILE = File.join(PROJECT_DIR, 'bitey_paths')
 RC_FILE = File.join(PROJECT_DIR, 'biteyrc')
+path = File.expand_path('~/.local/bitey')
+
+unless Dir.exist?(path)
+  FileUtils.mkdir_p(path)
+  puts "✅ Directory created at #{path}"
+end
 
 def locked?
   File.exist?(LOCK_FILE)
