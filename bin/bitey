@@ -58,33 +58,6 @@ def install(remote_name, *packages)
 
   puts "ℹ️ You are about to make changes in the system.\n\n⬇️ Installing:"
   packages.each { |pkg| puts "  - #{pkg}" }
-
-  puts "☑️ Dependencies:"
-  packages.each do |package|
-    remote_addon = File.join(BITEY_DIR, 'software', "remote-#{remote_name}")
-    remote_script = File.join(remote_addon, 'remote.sh')
-    install_path = File.join(SOFTWARE_DIR, package)
-
-    unless File.exist?(remote_script)
-      puts "❌ Bitzy doesn't know where to go... (Remote '#{remote_name}' not found or invalid.)"
-      unlock
-      exit 1
-    end
-
-    remote = File.readlines(remote_script).find { |l| l.strip.start_with?("REMOTE=") }&.split('=', 2)&.last&.gsub('"', '')
-    if remote.nil? || remote.empty?
-      puts "❌ Bitzy doesn't know where to go, nothing on the information paper... (REMOTE not set.)"
-      unlock
-      exit 1
-    end
-    run_cmd("sudo /usr/bitey/bin/bitey-pull #{remote}/#{package}")
-    depends_file = File.join(LOCAL_PATH, package, "project/depends.txt")
-    if File.exist?(depends_file)
-      deps = File.readlines(depends_file).map(&:strip).reject(&:empty?)
-      puts "  #{package}: " + (deps.empty? ? "None" : deps.join(", "))
-    else
-      puts "  #{package}: None"
-    end
   end
 
   print "\n❓ Are you sure? [Y/n] "
@@ -107,7 +80,8 @@ def install(remote_name, *packages)
       exit 1
     end
 
-    remote = File.readlines(remote_script).find { |l| l.strip.start_with?("REMOTE=") }&.split('=', 2)&.last&.gsub('"', '')
+    remote = File.readlines(remote_script).find { |l| l.strip.start_with?("REMOTE=") }&.split('=', 2)&.last&.gsub('"', '')&.strip
+
     if remote.nil? || remote.empty?
       puts "❌ Bitzy doesn't know where to go, nothing on the information paper... (REMOTE not set.)"
       unlock
