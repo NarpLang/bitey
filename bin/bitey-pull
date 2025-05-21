@@ -10,7 +10,7 @@ base_dir = File.expand_path("~/.local/bitey")
 # ---- Argument Parsing ----
 repo_url = ARGV[0]
 if repo_url.nil?
-  puts "Usage: ruby bitey-pull.rb <git-repo-url>"
+  puts "Usage: sudo /usr/bitey/bin/bitey-pull <git-url>"
   exit 1
 end
 
