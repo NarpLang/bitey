@@ -418,7 +418,7 @@ def shell
       when 'install'
         install(ARGV.shift, *ARGV)
       when 'remove'
-        remove(*ARGV)
+        remove(*ARGV[1..])
       when 'update'
         update
       when 'list'
