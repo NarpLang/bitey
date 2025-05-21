@@ -58,7 +58,6 @@ def install(remote_name, *packages)
 
   puts "ℹ️ You are about to make changes in the system.\n\n⬇️ Installing:"
   packages.each { |pkg| puts "  - #{pkg}" }
-  end
 
   print "\n❓ Are you sure? [Y/n] "
   confirm = $stdin.gets.chomp
