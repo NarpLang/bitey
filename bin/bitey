@@ -444,6 +444,43 @@ def shell
   end
 end
 
+def search(args)
+  require 'optparse'
+
+  options = { update: false }
+  parser = OptionParser.new do |opts|
+    opts.on('-u', '--update', 'Update remotes before searching') do
+      options[:update] = true
+    end
+  end
+
+  # Parse the arguments, leaving remaining ones
+  remaining = parser.parse(args)
+
+  if remaining.length != 2
+    puts "🔧 Usage: search [-u] <remote> <search_term>"
+    return
+  end
+
+  remote = remaining[0]
+  search_term = remaining[1]
+  package_list_path = "/usr/bitey/software/remote-#{remote}/package.list"
+
+  if options[:update]
+    update_remotes
+  end
+
+  unless File.exist?(package_list_path)
+    puts "ℹ️ Package list not found for remote '#{remote}'"
+    return
+  end
+
+  puts "🔍 Searching for '#{search_term}' in remote '#{remote}'..."
+  File.foreach(package_list_path) do |line|
+    puts line if line.downcase.include?(search_term.downcase)
+  end
+end
+
 # Main execution starts here
 if ARGV.empty?
   puts "🐶 Run 'bitey --help' for usage."
@@ -476,6 +513,8 @@ when 'repair'
   repair
 when 'shell'
   shell
+when 'search'
+  search(*ARGV)
 else
   puts "❓ Unknown command: #{command}"
 end
