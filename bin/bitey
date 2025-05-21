@@ -29,6 +29,19 @@ def run_cmd(command)
   end
 end
 
+def update_remotes
+  puts "🦴 Updating Repositories..."
+  sleep(0.3)
+  puts "---"
+  puts "🍫 Bitey Main Remote (main) ..."
+  run_cmd("cd /usr/bitey/software/remote-main")
+  run_cmd("sudo git pull")
+  puts "🔧 Bitey Developer Remote (dev) ..."
+  run_cmd("cd /usr/bitey/software/remote-dev")
+  run_cmd("sudo git pull")
+  puts "---"
+end
+
 def install(remote_name, *packages)
   if locked?
     puts "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
