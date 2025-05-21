@@ -35,7 +35,7 @@ def run_cmd(command)
 end
 
 def update_remotes
-  puts "🦴 Updating Repositories..."
+  puts "🦴 Updating Remotes..."
   sleep(0.3)
   puts "---"
   puts "🍫 Bitey Main Remote (main) ..."
