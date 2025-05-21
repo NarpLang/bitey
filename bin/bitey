@@ -61,6 +61,7 @@ def install(remote_name, *packages)
 
   puts "☑️ Dependencies:"
   packages.each do |package|
+    run_cmd("sudo /usr/bitey/bin/bitey-pull #{remote-name}/#{package}
     depends_file = File.join(LOCAL_PATH, package, "project/depends.txt")
     if File.exist?(depends_file)
       deps = File.readlines(depends_file).map(&:strip).reject(&:empty?)
@@ -111,7 +112,7 @@ def install(remote_name, *packages)
         deps = File.readlines("project/depends.txt").map(&:strip).reject(&:empty?)
         deps.each do |dep|
           puts "📦 Installing dependency #{dep}..."
-          run_cmd("sudo bitey install #{remote_name} #{dep}")
+          run_cmd("sudo bitey install #{dep}")
         end
       end
 
