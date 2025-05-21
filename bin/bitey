@@ -36,75 +36,91 @@ def install(remote_name, *packages)
   end
 
   lock
-
   FileUtils.mkdir_p(SOFTWARE_DIR) unless Dir.exist?(SOFTWARE_DIR)
 
+  puts "🦴 Updating Repositories..."
+  sleep(0.3)
+  puts "---"
+  puts "🍫 Bitey Main Repository (main) ..."
+  run_cmd(cd /usr/bitey/software/remote-main)
+  run_cmd(git pull)
+  puts "🔧 Bitey Developer Repository (#{remote_name}) ..."
+  run_cmd(cd /usr/bitey/software/remote-dev)
+  run_cmd(git pull)
+  puts "---"
+
+  puts "ℹ️ You are about to make changes in the system.\n\n⬇️ Installing:"
+  packages.each { |pkg| puts "  - #{pkg}" }
+
+  puts "☑️ Dependencies:"
   packages.each do |package|
-    remote_addon = File.join(BITEY_DIR, 'addons', "remote-#{remote_name}")
+    depends_file = File.join(BITEY_DIR, 'addons', "remote-#{remote_name}", package, 'project/depends.txt')
+    if File.exist?(depends_file)
+      deps = File.readlines(depends_file).map(&:strip).reject(&:empty?)
+      puts "  #{package}: " + (deps.empty? ? "None" : deps.join(", "))
+    else
+      puts "  #{package}: None"
+    end
+  end
+
+  print "\n❓ Are you sure? [Y/n] "
+  confirm = $stdin.gets.chomp
+  if confirm.downcase != "y" && confirm != ""
+    puts "❌ Cancelled."
+    unlock
+    return
+  end
+
+  puts "\n🦴 Making changes to the system..."
+  packages.each_with_index do |package, idx|
+    remote_addon = File.join(BITEY_DIR, 'software', "remote-#{remote_name}")
+    remote_script = File.join(remote_addon, 'remote.sh')
     install_path = File.join(SOFTWARE_DIR, package)
 
-    remote_script = File.join(remote_addon, 'remote.sh')
     unless File.exist?(remote_script)
       puts "❌ Bitzy doesn't know where to go... (Remote '#{remote_name}' not found or invalid.)"
+      unlock
       exit 1
     end
 
-    # Source the remote.sh script and extract the REMOTE variable
-    remote = nil
-    File.readlines(remote_script).each do |line|
-      if line.strip.start_with?('REMOTE=')
-        remote = line.strip.split('=', 2)[1].gsub('"', '')
-        break
-      end
-    end
-
+    remote = File.readlines(remote_script).find { |l| l.strip.start_with?("REMOTE=") }&.split('=', 2)&.last&.gsub('"', '')
     if remote.nil? || remote.empty?
-      puts "❌ Bitzy doesn't know where to go, nothing on the information paper... (REMOTE variable not set in #{remote_script}.)"
+      puts "❌ Bitzy doesn't know where to go, nothing on the information paper... (REMOTE not set.)"
+      unlock
       exit 1
     end
 
     if Dir.exist?(install_path)
-      puts "⚠️ Bitzy found out that #{package} is already installed at #{install_path}. Skipping..."
+      puts "⚠️ Bitzy found out that #{package} is already installed. Skipping..."
       next
     end
 
-    puts "📦 Bitzy is installing #{package}..."
-    system("git clone #{remote}/#{package} #{install_path}") or abort("❌ Installation failure.")
+    print "📦 [#{idx+1}/#{packages.size}] Installing #{package} ... "
+    run_cmd("git clone #{remote}/#{package} #{install_path}")
+    puts "done."
 
     Dir.chdir(install_path) do
-      unless File.exist?('project/paths.txt')
-        puts "❌ Installation invalid."
-        FileUtils.rm_rf(install_path)
-        exit 1
-      end
-
-      depends_file = 'project/depends.txt'
-      if File.exist?(depends_file)
-        dependencies = []
-        File.readlines(depends_file).each do |line|
-          dependencies << line.strip unless line.strip.empty?
-        end
-
-        unlock
-        dependencies.each do |dep|
+      if File.exist?("project/depends.txt")
+        deps = File.readlines("project/depends.txt").map(&:strip).reject(&:empty?)
+        deps.each do |dep|
           puts "📦 Installing dependency #{dep}..."
-          system("sudo bitey install #{dep}")
+          run_cmd("sudo bitey install #{remote_name} #{dep}")
         end
-        lock
       end
 
-      system("bash project/install.sh")
-      Dir.glob('bin/*').each { |file| FileUtils.chmod('+x', file) }
+      run_cmd("bash project/install.sh")
+      Dir.glob("bin/*").each { |f| FileUtils.chmod("+x", f) }
 
-      File.open(File.join(BITEY_DIR, 'project', 'bitey_paths'), 'a') { |f| f.puts install_path }
-      File.open(File.join(BITEY_DIR, 'project', 'biteyrc'), 'a') { |f| f.puts File.join(install_path, 'bin') }
-
-      puts "✅ Bitzy installed #{package}."
+      File.open(PATHS_FILE, 'a') { |f| f.puts install_path }
+      File.open(RC_FILE, 'a') { |f| f.puts File.join(install_path, 'bin') }
     end
+
+    puts "✅ Bitzy installed #{package}."
   end
 
   unlock
 end
+
 
 def remove(*packages)
   if locked?
