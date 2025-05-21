@@ -173,6 +173,8 @@ def update
 
   lock
 
+  update_remotes
+
   bitey_paths = File.exist?(PATHS_FILE) ? File.readlines(PATHS_FILE, chomp: true) : []
   biteyrc = File.exist?(RC_FILE) ? File.readlines(RC_FILE, chomp: true) : []
 
