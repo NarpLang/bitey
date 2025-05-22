@@ -38,10 +38,34 @@ def update_remotes
   puts "🦴 Updating Remotes..."
   sleep(0.3)
   puts "---"
-  puts "🍫 Bitey Main Remote (main) ..."
-  run_cmd("sudo git -C /usr/bitey/software/remote-main pull")
-  puts "🔧 Bitey Developer Remote (dev) ..."
-  run_cmd("sudo git -C /usr/bitey/software/remote-dev pull")
+
+  Dir["/usr/bitey/software/remote-*/remote.sh"].each do |remote_file|
+    remote_dir = File.dirname(remote_file)
+    remote_name = File.basename(remote_dir).sub(/^remote-/, '')
+
+    # Extract vars from shell script
+    env = {}
+    IO.popen(["bash", "-c", "source #{remote_file} && env"], err: [:child, :out]) do |io|
+      io.each_line do |line|
+        key, val = line.chomp.split("=", 2)
+        env[key] = val
+      end
+    end
+
+    icon = env["REMOTE_ICON"] || "📦"
+    name = env["REMOTE_NAME"] || "Unknown Remote"
+
+    puts "#{icon} #{name} (#{remote_name}) ..."
+
+    if File.directory?("#{remote_dir}/.git")
+      run_cmd("sudo git -C #{remote_dir} pull")
+    elsif File.executable?("#{remote_dir}/updater.sh")
+      run_cmd("sudo #{remote_dir}/updater.sh")
+    else
+      puts "⚠️  No updater found for #{remote_name}"
+    end
+  end
+
   puts "---"
 end
 
