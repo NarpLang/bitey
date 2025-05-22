@@ -163,7 +163,7 @@ def remove(*packages)
     return
   end
 
-  packages.each do |software|
+  packages.each_with_index do |package, idx|
     install_path = File.join(SOFTWARE_DIR, software)
 
     unless Dir.exist?(install_path)
