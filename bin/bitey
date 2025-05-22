@@ -246,6 +246,7 @@ def print_help
         list - List installed packages.
         update - Update all packages.
         info <package> - See the package information.
+        search [-u] <remote> <search_term> - Search for a package.
 
     🐚 Shell:
         shell - Open a Bitey Shell session.
