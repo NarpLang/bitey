@@ -314,6 +314,13 @@ def info(package)
   puts "Maintainer: #{conf['PACKAGE_MAINTAINER'] || 'Unknown'}"
   puts "Description: #{conf['PACKAGE_DESCRIPTION'] || 'No description'}"
   puts "Location: #{package_dir}"
+
+  # Load additional info from biteydb if it exists
+  biteydb_path = "/usr/bitey/software/biteydb/data/#{package}.txt"
+  if File.exist?(biteydb_path)
+    puts
+    puts File.read(biteydb_path)
+  end
 end
 
 def doctor
