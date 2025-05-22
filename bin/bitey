@@ -80,7 +80,7 @@ def install(remote_name, *packages)
 
   update_remotes
 
-  puts "ℹ️ You are about to make changes in the system.\n\n⬇️ Installing:"
+  puts "ℹ️ You are about to make changes in the system.\n\n📦 Installing:"
   packages.each { |pkg| puts "  - #{pkg}" }
 
   print "\n❓ Are you sure? [Y/n] "
@@ -117,6 +117,7 @@ def install(remote_name, *packages)
     end
 
     print "📦 [#{idx+1}/#{packages.size}] Installing #{package} ... "
+    puts ""
     run_cmd("git clone #{remote}/#{package} #{install_path}")
     puts "done."
 
@@ -151,6 +152,17 @@ def remove(*packages)
 
   lock
 
+  puts "ℹ️ You are about to make changes in the system.\n\n🗑️ Removing:"
+  packages.each { |pkg| puts "  - #{pkg}" }
+
+  print "\n❓ Are you sure? [Y/n] "
+  confirm = $stdin.gets.chomp
+  if confirm.downcase != "y" && confirm != ""
+    puts "❌ Cancelled."
+    unlock
+    return
+  end
+
   packages.each do |software|
     install_path = File.join(SOFTWARE_DIR, software)
 
@@ -168,7 +180,8 @@ def remove(*packages)
       end
     end
 
-    puts "🗑️ Bitzy is removing #{software}..."
+    print "🗑️ [#{idx+1}/#{packages.size}] Removing #{software} ... "
+    puts ""
     FileUtils.rm_rf(install_path)
 
     # Clean bitey_paths and biteyrc
