@@ -459,8 +459,7 @@ def search(*args)
 
   puts "🔍 Searching for '#{search_term}' in remote '#{remote}'..."
   File.foreach(package_list_path) do |line|
-    print "- "
-    puts line if line.downcase.include?(search_term.downcase)
+    puts "- #{line}" if line.downcase.include?(search_term.downcase)
   end
 end
 
