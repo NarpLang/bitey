@@ -514,7 +514,7 @@ when 'repair'
 when 'search'
   search(*ARGV)
 when 'find'
-  find(*ARGV)
+  find(ARGV[0])
 else
   puts "❓ Unknown command: #{command}"
 end
