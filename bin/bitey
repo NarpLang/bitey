@@ -261,15 +261,6 @@ def print_help
         info <package> - See the package information.
         search [-u] <remote> <search_term> - Search for a package.
 
-    🐚 Shell:
-        shell - Open a Bitey Shell session.
-        exit - Quit the Shell.
-        reload - Reload the Shell.
-        clear - Clear the Shell.
-        history - Read your history.
-        help - See the help message.
-        version - Check the version of your Bitey installation.
-
     🔐 Lock:
         lock - Lock Bitey.
         unlock - Unlock Bitey.
@@ -435,60 +426,6 @@ def repair
   end
 end
 
-def shell
-  puts "🦴 Welcome to Bitey Shell!"
-  puts "Type 'help' for available commands. Type 'exit' to quit."
-
-  loop do
-    print "bitey> "
-    input = $stdin.gets
-    break if input.nil?
-
-    input.strip!
-    next if input.empty?
-
-    case input
-    when 'exit'
-      puts "👋 Exiting shell."
-      break
-    when 'clear'
-      system("clear")
-    else
-      # Fake ARGV for internal dispatch
-      original_argv = ARGV.dup
-      ARGV.replace(input.split)
-      command = ARGV.shift
-
-      case command
-      when 'install'
-        install(ARGV.shift, *ARGV)
-      when 'remove'
-        remove(*ARGV[1..])
-      when 'update'
-        update
-      when 'list'
-        list_packages
-      when 'info'
-        info(ARGV[0])
-      when 'lock'
-        lock
-      when 'unlock'
-        unlock
-      when 'doctor'
-        doctor
-      when 'repair'
-        repair
-      when 'help', '--help'
-        print_help
-      else
-        puts "❓ Unknown command: #{command}"
-      end
-
-      ARGV.replace(original_argv)
-    end
-  end
-end
-
 def search(*args)
   require 'optparse'
 
@@ -522,6 +459,7 @@ def search(*args)
 
   puts "🔍 Searching for '#{search_term}' in remote '#{remote}'..."
   File.foreach(package_list_path) do |line|
+    print "- "
     puts line if line.downcase.include?(search_term.downcase)
   end
 end
@@ -556,8 +494,6 @@ when 'doctor'
   doctor
 when 'repair'
   repair
-when 'shell'
-  shell
 when 'search'
   search(*ARGV)
 else
