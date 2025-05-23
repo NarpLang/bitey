@@ -464,6 +464,10 @@ def search(*args)
 end
 
 def find(remote)
+  if remote.nil? || remote.strip.empty?
+    puts "❌ Please provide a remote name."
+    exit 1
+  end
   package_list_path = "/usr/bitey/software/remote-#{remote}/package.list"
 
   unless File.exist?(package_list_path)
