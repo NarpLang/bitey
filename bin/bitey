@@ -463,6 +463,20 @@ def search(*args)
   end
 end
 
+def find(remote)
+  package_list_path = "/usr/bitey/software/remote-#{remote}/package.list"
+
+  unless File.exist?(package_list_path)
+    puts "ℹ️ Package list not found for remote '#{remote}'"
+    return
+  end
+
+  puts "📦 Listing all packages in remote '#{remote}':"
+  File.foreach(package_list_path) do |line|
+    puts "- #{line.chomp}"
+  end
+end
+
 # Main execution starts here
 if ARGV.empty?
   puts "🐶 Run 'bitey --help' for usage."
@@ -495,6 +509,8 @@ when 'repair'
   repair
 when 'search'
   search(*ARGV)
+when 'find'
+  find(*ARGV)
 else
   puts "❓ Unknown command: #{command}"
 end
