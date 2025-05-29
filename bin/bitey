@@ -51,7 +51,7 @@ def update_remotes
     remote_dir = File.dirname(remote_file)
     remote_name = File.basename(remote_dir).sub(/^remote-/, '')
 
-    # Extract vars from shell script
+    # Extract vars
     env = {}
     IO.popen(["bash", "-c", "source #{remote_file} && env"], err: [:child, :out]) do |io|
       io.each_line do |line|
@@ -62,15 +62,15 @@ def update_remotes
 
     icon = env["REMOTE_ICON"] || "📦"
     name = env["REMOTE_NAME"] || "Unknown Remote"
-
-    puts "#{icon} #{name} (#{remote_name}) ..."
+    print "#{icon} #{name} (#{remote_name}) ... "
 
     if File.directory?("#{remote_dir}/.git")
-      run_cmd("sudo git -C #{remote_dir} pull")
+      run_cmd("git -C #{remote_dir} pull --quiet")
+      puts "✅"
     elsif File.executable?("#{remote_dir}/updater.sh")
       run_cmd("sudo #{remote_dir}/updater.sh")
     else
-      puts "⚠️  No updater found for #{remote_name}"
+      puts "⚠️  No updater found"
     end
   end
 
@@ -85,7 +85,6 @@ def install(remote_name, *packages)
 
   lock
   FileUtils.mkdir_p(SOFTWARE_DIR) unless Dir.exist?(SOFTWARE_DIR)
-
   update_remotes
 
   puts "ℹ️ You are about to make changes in the system.\n\n📦 Installing:"
@@ -106,7 +105,7 @@ def install(remote_name, *packages)
     install_path = File.join(SOFTWARE_DIR, package)
 
     unless File.exist?(remote_script)
-      puts "❌ Bitzy doesn't know where to go... (Remote '#{remote_name}' not found or invalid.)"
+      puts "\n❌ Bitzy doesn't know where to go... (Remote '#{remote_name}' not found or invalid.)"
       unlock
       exit 1
     end
@@ -114,7 +113,7 @@ def install(remote_name, *packages)
     remote = File.readlines(remote_script).find { |l| l.strip.start_with?("REMOTE=") }&.split('=', 2)&.last&.gsub('"', '')&.strip
 
     if remote.nil? || remote.empty?
-      puts "❌ Bitzy doesn't know where to go, nothing on the information paper... (REMOTE not set.)"
+      puts "\n❌ Bitzy doesn't know where to go, nothing on the information paper... (REMOTE not set.)"
       unlock
       exit 1
     end
@@ -124,16 +123,17 @@ def install(remote_name, *packages)
       next
     end
 
-    print "📦 [#{idx+1}/#{packages.size}] Installing #{package} ... "
-    puts ""
-    run_cmd("git clone #{remote}/#{package} #{install_path}")
-    puts "done."
+    label = "📦 [#{idx + 1}/#{packages.size}] Installing #{package}"
+    print_progress(idx + 1, packages.size, label)
+    $stdout.flush
+
+    run_cmd("git clone --quiet #{remote}/#{package} #{install_path}")
 
     Dir.chdir(install_path) do
       if File.exist?("project/depends.txt")
         deps = File.readlines("project/depends.txt").map(&:strip).reject(&:empty?)
         deps.each do |dep|
-          puts "📦 Installing dependency #{dep}..."
+          puts "\n📦 Installing dependency #{dep}..."
           run_cmd("sudo bitey install #{dep}")
         end
       end
@@ -145,7 +145,7 @@ def install(remote_name, *packages)
       File.open(RC_FILE, 'a') { |f| f.puts File.join(install_path, 'bin') }
     end
 
-    puts "✅ Bitzy installed #{package}."
+    puts "\n✅ Bitzy installed #{package}."
   end
 
   unlock
