@@ -34,6 +34,14 @@ def run_cmd(command)
   end
 end
 
+def print_progress(current, total, label)
+  percent = (current.to_f / total * 100).round
+  bar_length = 20
+  filled_length = (bar_length * percent / 100).round
+  bar = '=' * filled_length + ' ' * (bar_length - filled_length)
+  print "\r#{label.ljust(80)} #{percent}% [#{bar}]"
+end
+
 def update_remotes
   puts "🦴 Updating Remotes..."
   sleep(0.3)
