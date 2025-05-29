@@ -34,12 +34,19 @@ def run_cmd(command)
   end
 end
 
-def print_progress(current, total, label)
-  percent = (current.to_f / total * 100).round
-  bar_length = 20
-  filled_length = (bar_length * percent / 100).round
-  bar = '=' * filled_length + ' ' * (bar_length - filled_length)
-  print "\r#{label.ljust(80)} #{percent}% [#{bar}]"
+def run_git_with_progress(cmd, label)
+  IO.popen(cmd + ' 2>&1') do |io|
+    io.each do |line|
+      if line =~ /Receiving objects:\s+(\d+)%/
+        percent = $1.to_i
+        bar = "=" * (percent / 10) + " " * (10 - percent / 10)
+        progress = "#{percent}% [#{bar}]"
+        print "#{label}".ljust(80 - progress.length) + progress + "\r"
+        $stdout.flush
+      end
+    end
+  end
+  puts
 end
 
 def update_remotes
@@ -124,7 +131,7 @@ def install(remote_name, *packages)
     end
 
     label = "📦 [#{idx + 1}/#{packages.size}] Installing #{package}"
-    print_progress(idx + 1, packages.size, label)
+    run_git_with_progress("git clone --progress #{remote}/#{package} #{install_path}", label)
     $stdout.flush
 
     run_cmd("git clone --quiet #{remote}/#{package} #{install_path}")
@@ -212,48 +219,46 @@ def update
   end
 
   lock
-
   update_remotes
 
   bitey_paths = File.exist?(PATHS_FILE) ? File.readlines(PATHS_FILE, chomp: true) : []
   biteyrc = File.exist?(RC_FILE) ? File.readlines(RC_FILE, chomp: true) : []
 
-  bitey_paths.each do |path|
+  total = bitey_paths.size
+  width = 90  # Adjust terminal width for progress bar alignment
+
+  bitey_paths.each_with_index do |path, idx|
     next unless Dir.exist?(path)
 
+    percent = ((idx + 1) * 100 / total.to_f).to_i
+    bar_length = 10
+    filled = (percent * bar_length / 100).clamp(0, bar_length)
+    bar = "=" * filled + " " * (bar_length - filled)
+    progress_str = "#{percent}% [#{bar}]"
+    left = "🔄 [#{idx+1}/#{total}] Updating #{File.basename(path)}"
+
+    # Adjust spacing to align right
+    print "#{left}".ljust(width - progress_str.length) + progress_str + "\n"
+
     Dir.chdir(path) do
-      puts "🔄 Bitzy is updating path #{path}..."
-      run_cmd("sudo git reset --hard HEAD")
-      run_cmd("sudo git pull")
-      run_cmd("sudo chmod +x bin/*") if Dir.exist?('bin')
+      run_cmd("git reset --quiet --hard HEAD")
+      run_cmd("git pull --quiet")
+      run_cmd("chmod +x bin/*") if Dir.exist?('bin')
 
       if File.exist?('project/update.sh')
-        puts "🔧 Bitzy is running update script..."
-        run_cmd("sudo bash project/update.sh")
+        puts "🔧 Running update script for #{File.basename(path)}..."
+        run_cmd("bash project/update.sh")
       end
     end
+
+    puts "✅ Updated #{File.basename(path)}\n\n"
   end
 
-  # Rewrite files (to preserve updated structure)
   File.write(PATHS_FILE, bitey_paths.join("\n") + "\n")
   File.write(RC_FILE, biteyrc.join("\n") + "\n")
-
   unlock
 end
 
-def list_packages
-  unless Dir.exist?(SOFTWARE_DIR)
-    puts "❌ No packages installed."
-    exit 1
-  end
-
-  puts "📦 Installed Bitey packages:"
-  Dir.entries(SOFTWARE_DIR).each do |entry|
-    next if ['.', '..'].include?(entry)
-    path = File.join(SOFTWARE_DIR, entry)
-    puts " - #{entry}" if File.directory?(path)
-  end
-end
 
 def print_help
   puts <<~HELP
