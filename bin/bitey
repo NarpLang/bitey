@@ -3,6 +3,7 @@ require 'fileutils'
 require 'time'
 require 'io/console'
 require 'open-uri'
+require 'pty'
 
 BITEY_DIR = '/usr/bitey'
 LOCK_FILE = File.join(BITEY_DIR, 'lock')
@@ -84,34 +85,30 @@ end
 def git_with_progress(*args, label: nil)
   latest_progress = ""
   max_line_length = 0
-
-  # Insert '--progress' before the destination path
   git_args = args.dup
   git_args.insert(-2, '--progress') if git_args.size >= 2
 
-  IO.popen(['git', *git_args], err: [:child, :out]) do |io|
-    io.each do |line|
-      line = line.strip
+  begin
+    PTY.spawn("git #{git_args.join(' ')}") do |stdout, _stdin, pid|
+      stdout.each do |line|
+        line = line.strip
+        latest_progress = line.include?("\r") ? line.split("\r").last.strip : line
 
-      if line.include?("\r")
-        latest_progress = line.split("\r").last.strip
-      else
-        latest_progress = line
+        left  = label ? "#{label}..." : spin
+        right = "🐾 #{latest_progress}"
+        output = "#{left} | #{right}"
+        max_line_length = [max_line_length, output.length].max
+
+        print "\r#{' ' * max_line_length}\r#{output}"
+        $stdout.flush
       end
-
-      left  = label ? "#{label}..." : spin
-      right = "🐾 #{latest_progress}"
-
-      output = "#{left} | #{right}"
-      max_line_length = [max_line_length, output.length].max
-
-      print "\r#{' ' * max_line_length}\r#{output}"  # clear + print
-      $stdout.flush
     end
+  rescue PTY::ChildExited
+    puts ""
   end
 
   puts ""
-  return latest_progress
+  latest_progress
 end
 
 def update_remotes
