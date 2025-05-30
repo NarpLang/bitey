@@ -136,6 +136,7 @@ end
 def install(remote_name, *args)
   noconfirm = args.delete("--noconfirm")
   noupdate  = args.delete("--noupdate")
+  is_dep    = args.delete("--dep")
   noconfirm ||= args.delete("-y")
 
   packages = args
@@ -180,7 +181,11 @@ def install(remote_name, *args)
     end
 
     if Dir.exist?(install_path)
-      puts "⚠️ Bitzy found out that #{package} is already installed. Skipping..."
+      if is_dep
+         puts "✅ #{package} is already installed (dependency)."
+      else
+         puts "⚠️ Bitzy found out that #{package} is already installed. Skipping..."
+      end
       next
     end
 
@@ -194,7 +199,7 @@ def install(remote_name, *args)
         deps.each do |dep|
           puts "\n📦 Installing dependency #{dep}..."
           unlock
-          run_cmd("sudo bitey install #{dep} --noconfirm --noupdate")
+          run_cmd("sudo bitey install #{dep} --noconfirm --noupdate --dep")
           lock
         end
       end
@@ -274,19 +279,13 @@ def update
   bitey_paths.each_with_index do |path, idx|
     next unless Dir.exist?(path)
 
-    percent = ((idx + 1) * 100 / total.to_f).to_i
-    bar_length = 10
-    filled = (percent * bar_length / 100).clamp(0, bar_length)
-    bar = "=" * filled + " " * (bar_length - filled)
-    progress_str = "#{percent}% [#{bar}]"
-    left = "🔄 [#{idx+1}/#{total}] Updating #{File.basename(path)}"
-
-    # Adjust spacing to align right
-    print "#{left}".ljust(width - progress_str.length) + progress_str + "\n"
+    label = "🔄 [#{idx+1}/#{total}] Updating #{File.basename(path)}..."
 
     Dir.chdir(path) do
+      puts ""
+      print "ℹ️"
       run_cmd("git reset --quiet --hard HEAD")
-      run_cmd("git pull --quiet")
+      git_with_progress("pull", "", "", label: label)
       run_cmd("chmod +x bin/*") if Dir.exist?('bin')
 
       if File.exist?('project/update.sh')
