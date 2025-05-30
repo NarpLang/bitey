@@ -8,5 +8,5 @@ if [[ $choice == "y" ]]; then
     exit 0
 else
     echo "🐶 Removal cancelled."
-    exit 1
+    exit 10
 fi
