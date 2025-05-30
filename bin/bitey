@@ -291,8 +291,6 @@ def update
         run_cmd("bash project/update.sh")
       end
     end
-
-    puts "\n✅ Updated #{File.basename(path)}\n\n"
   end
 
   File.write(PATHS_FILE, bitey_paths.join("\n") + "\n")
