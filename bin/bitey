@@ -284,6 +284,7 @@ def update
     Dir.chdir(path) do
       run_cmd("git reset --quiet --hard HEAD")
       git_with_progress("pull", "", "", label: label)
+      puts "\n"
       run_cmd("chmod +x bin/*") if Dir.exist?('bin')
 
       if File.exist?('project/update.sh')
