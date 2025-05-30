@@ -37,16 +37,19 @@ end
 def git_with_progress(*args, label: nil)
   latest_progress = ""
 
-  # Insert '--progress' just before the last argument (e.g., the path)
+  # Insert '--progress' just before the last argument (e.g., the target path)
   git_args = args.dup
   git_args.insert(-2, '--progress') if git_args.size >= 2
 
   IO.popen(['git', *git_args], err: [:child, :out]) do |io|
     io.each do |line|
+      line = line.rstrip
+
       if line.include?("\r")
-        latest_progress = line.strip
-        print "\r#{label} → #{latest_progress}" if label
-        print "\r#{latest_progress}" unless label
+        latest_progress = line.split("\r").last.strip
+        output = label ? "#{label} - #{latest_progress}" : latest_progress
+
+        print "\r#{output.ljust(terminal_width)}"
         $stdout.flush
       else
         puts line
@@ -54,7 +57,18 @@ def git_with_progress(*args, label: nil)
     end
   end
 
+  puts
   return latest_progress
+end
+
+# Helper for clearing previous characters if new line is shorter
+def terminal_width
+  @terminal_width ||= begin
+    require 'io/console'
+    IO.console.winsize[1]
+  rescue
+    80
+  end
 end
 
 def update_remotes
@@ -138,7 +152,7 @@ def install(remote_name, *packages)
       next
     end
 
-    label = "📦 [#{idx + 1}/#{packages.size}] Installing #{package}"
+    label = "📦 [#{idx + 1}/#{packages.size}] Installing #{package}..."
     git_with_progress("clone", "#{remote}/#{package}", "#{install_path}", label: label)
     $stdout.flush
 
