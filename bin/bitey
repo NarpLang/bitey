@@ -83,8 +83,8 @@ end
 
 def git_with_progress(*args, label: nil)
   latest_progress = ""
-  spinner = %w[🌀 🌪️ 💫 ✨]
-  spinner_index = 0
+  max_line_length = 0
+  spinner = Enumerator.new { |e| loop { e.yield "🌀"; e.yield "🌪"; e.yield "💫"; e.yield "✨" } }
 
   # Insert '--progress' before the destination path
   git_args = args.dup
@@ -100,20 +100,14 @@ def git_with_progress(*args, label: nil)
         latest_progress = line
       end
 
-      # Prepare left and right sides
-      left = label ? "#{label} #{spinner[spinner_index]}" : ""
+      spin = spinner.next
+      left  = label ? "#{label}... #{spin}" : spin
       right = "🐾 #{latest_progress}"
 
-      spinner_index = (spinner_index + 1) % spinner.length
+      output = "#{left.ljust(40)}#{right}" # Adjust spacing as needed
+      max_line_length = [max_line_length, output.length].max
 
-      # Get terminal width
-      terminal_width = IO.console.winsize[1] rescue 80
-      space_between = terminal_width - left.length - right.length
-      space_between = 1 if space_between < 1  # Prevent negative spacing
-
-      output = "#{left}#{' ' * space_between}#{right}"
-
-      print "\r#{output}"
+      print "\r#{' ' * max_line_length}\r#{output}"  # clear + print
       $stdout.flush
     end
   end
