@@ -206,9 +206,9 @@ def install(remote_name, *args)
       File.open(RC_FILE, 'a') { |f| f.puts File.join(install_path, 'bin') }
       installed << package
     end
-    puts "✅ Bitzy installed #{installed.join(', ')}." unless installed.empty?
   end
 
+  puts "✅ Bitzy installed #{installed.join(', ')}." unless installed.empty?
   unlock
 end
 
