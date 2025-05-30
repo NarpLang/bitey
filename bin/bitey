@@ -133,20 +133,27 @@ def update_remotes
   puts "---"
 end
 
-def install(remote_name, *packages)
+def install(remote_name, *args)
+  noconfirm = args.delete("--noconfirm")
+  noupdate  = args.delete("--noupdate")
+
+  packages = args
+
   locksmith
   FileUtils.mkdir_p(SOFTWARE_DIR) unless Dir.exist?(SOFTWARE_DIR)
-  update_remotes
+  update_remotes unless noupdate
 
-  puts "ℹ️ You are about to make changes in the system.\n\n📦 Installing:"
-  packages.each { |pkg| puts "  - #{pkg}" }
+  unless noconfirm
+    puts "ℹ️ You are about to make changes in the system.\n\n📦 Installing:"
+    packages.each { |pkg| puts "  - #{pkg}" }
 
-  print "\n❓ Are you sure? [Y/n] "
-  confirm = $stdin.gets.chomp
-  if confirm.downcase != "y" && confirm != ""
-    puts "❌ Cancelled."
-    unlock
-    return
+    print "\n❓ Are you sure? [Y/n] "
+    confirm = $stdin.gets.chomp
+    if confirm.downcase != "y" && confirm != ""
+      puts "❌ Cancelled."
+      unlock
+      return
+    end
   end
 
   puts "\n🦴 Making changes to the system..."
