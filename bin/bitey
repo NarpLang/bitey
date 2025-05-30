@@ -52,7 +52,7 @@ def git_with_progress(*args, label: nil)
         latest_progress = line
       end
 
-      output = label ? "📦 #{label} - #{latest_progress}" : latest_progress
+      output = label ? "#{label} - #{latest_progress}" : latest_progress
       max_line_length = [max_line_length, output.length].max
 
       print "\r#{output.ljust(max_line_length)}"
