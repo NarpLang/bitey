@@ -38,7 +38,7 @@ def git_with_progress(*args, label: nil)
   latest_progress = ""
   max_line_length = 0
 
-  # Insert '--progress' just before the destination path
+  # Insert '--progress' before the destination path
   git_args = args.dup
   git_args.insert(-2, '--progress') if git_args.size >= 2
 
@@ -48,19 +48,17 @@ def git_with_progress(*args, label: nil)
 
       if line.include?("\r")
         latest_progress = line.split("\r").last.strip
-        output = label ? "#{label} - #{latest_progress}" : latest_progress
-        max_line_length = [max_line_length, output.length].max
-
-        print "\r#{output.ljust(max_line_length)}"
-        $stdout.flush
       else
-        puts line
+        latest_progress = line
       end
+
+      output = label ? "📦 #{label} - #{latest_progress}" : latest_progress
+      max_line_length = [max_line_length, output.length].max
+
+      print "\r#{output.ljust(max_line_length)}"
+      $stdout.flush
     end
   end
-
-  # Clear the final progress line after finishing
-  puts
   return latest_progress
 end
 
