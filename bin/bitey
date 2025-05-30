@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 require 'fileutils'
 require 'time'
+require 'io/console'
 
 BITEY_DIR = '/usr/bitey'
 LOCK_FILE = File.join(BITEY_DIR, 'lock')
@@ -82,7 +83,8 @@ end
 
 def git_with_progress(*args, label: nil)
   latest_progress = ""
-  max_line_length = 0
+  spinner = %w[🌀 🌪️ 💫 ✨]
+  spinner_index = 0
 
   # Insert '--progress' before the destination path
   git_args = args.dup
@@ -98,10 +100,20 @@ def git_with_progress(*args, label: nil)
         latest_progress = line
       end
 
-      output = label ? "#{label} ➜ 🐾 #{latest_progress}" : latest_progress
-      max_line_length = [max_line_length, output.length].max
+      # Prepare left and right sides
+      left = label ? "#{label} #{spinner[spinner_index]}" : ""
+      right = "🐾 #{latest_progress}"
 
-      print "\r#{output.ljust(max_line_length)}"
+      spinner_index = (spinner_index + 1) % spinner.length
+
+      # Get terminal width
+      terminal_width = IO.console.winsize[1] rescue 80
+      space_between = terminal_width - left.length - right.length
+      space_between = 1 if space_between < 1  # Prevent negative spacing
+
+      output = "#{left}#{' ' * space_between}#{right}"
+
+      print "\r#{output}"
       $stdout.flush
     end
   end
