@@ -565,6 +565,28 @@ def find(remote)
   end
 end
 
+def list_packages
+  software_dir = "/usr/bitey/software"
+
+  unless Dir.exist?(software_dir)
+    puts "❌ Directory #{software_dir} does not exist."
+    return
+  end
+
+  packages = Dir.children(software_dir).select { |entry|
+    File.directory?(File.join(software_dir, entry))
+  }.sort
+
+  puts "📦 Installed Packages:"
+  if packages.empty?
+    puts "- (none)"
+  else
+    packages.each do |pkg|
+      puts "- #{pkg}"
+    end
+  end
+end
+
 # Main execution starts here
 if ARGV.empty?
   puts "🐶 Run 'bitey --help' for usage."
