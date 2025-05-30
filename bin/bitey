@@ -2,6 +2,7 @@
 require 'fileutils'
 require 'time'
 require 'io/console'
+require 'open-uri'
 
 BITEY_DIR = '/usr/bitey'
 LOCK_FILE = File.join(BITEY_DIR, 'lock')
@@ -376,11 +377,24 @@ def info(package)
   puts "Description: #{conf['PACKAGE_DESCRIPTION'] || 'No description'}"
   puts "Location: #{package_dir}"
 
-  # Load additional info from biteydb if it exists
-  biteydb_path = "/usr/bitey/software/biteydb/data/#{package}.txt"
-  if File.exist?(biteydb_path)
-    puts
-    puts File.read(biteydb_path)
+  # Check if BiteyDB is installed
+  biteydb_installed = Dir.exist?("/usr/bitey/software/biteydb")
+
+  # Package name (assumed defined earlier in the script)
+  # package = "something"
+
+  if biteydb_installed
+    begin
+      url = "https://raw.githubusercontent.com/NarpIndex/biteydb-data/main/data/#{package}.txt"
+      info = URI.open(url, &:read)
+
+      puts
+      puts info
+    rescue OpenURI::HTTPError
+      # Do nothing if the file is not found remotely
+    rescue => e
+      warn "❌ BiteyDB remote fetch error: #{e.message}"
+    end
   end
 end
 
