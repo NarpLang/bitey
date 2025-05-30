@@ -95,6 +95,7 @@ def git_with_progress(*args, label: nil)
       $stdout.flush
     end
   end
+  puts ""
   return latest_progress
 end
 
