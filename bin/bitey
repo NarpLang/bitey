@@ -80,11 +80,10 @@ def run_cmd(command)
   end
 end
 
-
 def git_with_progress(*args, label: nil)
   latest_progress = ""
   max_line_length = 0
-  spinner = Enumerator.new { |e| loop { e.yield "|"; e.yield "/"; e.yield "-"; e.yield "\" } }
+  spinner = Enumerator.new { |e| loop { e.yield "|"; e.yield "/"; e.yield "-"; e.yield "\\" } }
 
   # Insert '--progress' before the destination path
   git_args = args.dup
@@ -104,13 +103,14 @@ def git_with_progress(*args, label: nil)
       left  = label ? "#{label}... #{spin}" : spin
       right = "🐾 #{latest_progress}"
 
-      output = "#{left.ljust(40)}#{right}" # Adjust spacing as needed
+      output = "#{left.ljust(40)}#{right}"
       max_line_length = [max_line_length, output.length].max
 
       print "\r#{' ' * max_line_length}\r#{output}"  # clear + print
       $stdout.flush
     end
   end
+
   puts ""
   return latest_progress
 end
