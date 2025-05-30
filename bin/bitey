@@ -139,7 +139,7 @@ def install(remote_name, *packages)
     end
 
     label = "📦 [#{idx + 1}/#{packages.size}] Installing #{package}"
-    git_with_progress("clone", "#{remote}/#{package}", "#{install_path}", label)
+    git_with_progress("clone", "#{remote}/#{package}", "#{install_path}", label: label)
     $stdout.flush
 
     Dir.chdir(install_path) do
