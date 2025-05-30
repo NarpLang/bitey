@@ -84,7 +84,7 @@ end
 def git_with_progress(*args, label: nil)
   latest_progress = ""
   max_line_length = 0
-  spinner = Enumerator.new { |e| loop { e.yield "🌀"; e.yield "🌪"; e.yield "💫"; e.yield "✨" } }
+  spinner = Enumerator.new { |e| loop { e.yield "|"; e.yield "/"; e.yield "-"; e.yield "\" } }
 
   # Insert '--progress' before the destination path
   git_args = args.dup
