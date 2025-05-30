@@ -136,6 +136,7 @@ end
 def install(remote_name, *args)
   noconfirm = args.delete("--noconfirm")
   noupdate  = args.delete("--noupdate")
+  noconfirm ||= args.delete("-y")
 
   packages = args
 
@@ -154,9 +155,10 @@ def install(remote_name, *args)
       unlock
       return
     end
+    puts ""
   end
 
-  puts "\n🦴 Making changes to the system..."
+  puts "🦴 Making changes to the system..."
   packages.each_with_index do |package, idx|
     remote_addon = File.join(BITEY_DIR, 'software', "remote-#{remote_name}")
     remote_script = File.join(remote_addon, 'remote.sh')
@@ -191,7 +193,7 @@ def install(remote_name, *args)
         deps.each do |dep|
           puts "\n📦 Installing dependency #{dep}..."
           unlock
-          run_cmd("sudo bitey install #{dep}")
+          run_cmd("sudo bitey install #{dep} --noconfirm --noupdate")
           lock
         end
       end
