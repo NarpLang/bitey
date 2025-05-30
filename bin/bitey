@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require 'fileutils'
+require 'time'
 
 BITEY_DIR = '/usr/bitey'
 LOCK_FILE = File.join(BITEY_DIR, 'lock')
@@ -18,11 +19,46 @@ def locked?
 end
 
 def lock
-  FileUtils.touch(LOCK_FILE)
+  File.write(LOCK_FILE, Time.now.strftime("%H:%M %d.%m.%Y"))
 end
 
 def unlock
   FileUtils.rm_f(LOCK_FILE)
+end
+
+def locksmith
+  if locked?
+    timestamp_str = File.read(LOCK_FILE).strip
+
+    begin
+      lock_time = Time.strptime(timestamp_str, "%H:%M %d.%m.%Y")
+      age = Time.now - lock_time
+
+      if age > LOCK_TIMEOUT
+        puts "⚠️  Hey, so the lock may be corrupted... It's been ten minutes..."
+        print "Remove it? [Y/n] "
+        response = $stdin.gets.strip.downcase
+        if response == "y" || response.empty?
+          unlock
+          lock
+          return
+        else
+          puts "❌ Operation cancelled due to lock."
+          exit 1
+        end
+      else
+        puts "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
+        exit 1
+      end
+
+    rescue ArgumentError
+      puts "⚠️  Lock file is corrupted. Removing it."
+      unlock
+      lock
+    end
+  else
+    lock
+  end
 end
 
 def run_cmd(command)
@@ -98,12 +134,7 @@ def update_remotes
 end
 
 def install(remote_name, *packages)
-  if locked?
-    puts "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
-    exit 1
-  end
-
-  lock
+  locksmith
   FileUtils.mkdir_p(SOFTWARE_DIR) unless Dir.exist?(SOFTWARE_DIR)
   update_remotes
 
@@ -173,12 +204,7 @@ end
 
 
 def remove(*packages)
-  if locked?
-    puts "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
-    exit 1
-  end
-
-  lock
+  locksmith
 
   puts "ℹ️ You are about to make changes in the system.\n\n🗑️ Removing:"
   packages.each { |pkg| puts "  - #{pkg}" }
@@ -226,12 +252,7 @@ def remove(*packages)
 end
 
 def update
-  if locked?
-    puts "🔒 Bitey is locked. Run 'sudo bitey unlock' to remove the lock."
-    exit 1
-  end
-
-  lock
+  locksmith
   update_remotes
 
   bitey_paths = File.exist?(PATHS_FILE) ? File.readlines(PATHS_FILE, chomp: true) : []
