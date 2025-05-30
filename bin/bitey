@@ -282,8 +282,6 @@ def update
     label = "🔄 [#{idx+1}/#{total}] Updating #{File.basename(path)}..."
 
     Dir.chdir(path) do
-      puts ""
-      print "ℹ️"
       run_cmd("git reset --quiet --hard HEAD")
       git_with_progress("pull", "", "", label: label)
       run_cmd("chmod +x bin/*") if Dir.exist?('bin')
@@ -294,7 +292,7 @@ def update
       end
     end
 
-    puts "✅ Updated #{File.basename(path)}\n\n"
+    puts "\n✅ Updated #{File.basename(path)}\n\n"
   end
 
   File.write(PATHS_FILE, bitey_paths.join("\n") + "\n")
