@@ -283,9 +283,9 @@ def update
     label = "🔄 [#{idx+1}/#{total}] Updating #{File.basename(path)}..."
 
     Dir.chdir(path) do
+      puts "#(label)"
       run_cmd("git reset --quiet --hard HEAD")
-      git_with_progress("pull", "", "", label: label)
-      puts "\n"
+      run_cmd("git pull --quiet")
       run_cmd("chmod +x bin/*") if Dir.exist?('bin')
 
       if File.exist?('project/update.sh')
