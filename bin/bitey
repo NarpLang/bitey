@@ -36,20 +36,22 @@ end
 
 def git_with_progress(*args, label: nil)
   latest_progress = ""
+  max_line_length = 0
 
-  # Insert '--progress' just before the last argument (e.g., the target path)
+  # Insert '--progress' just before the destination path
   git_args = args.dup
   git_args.insert(-2, '--progress') if git_args.size >= 2
 
   IO.popen(['git', *git_args], err: [:child, :out]) do |io|
     io.each do |line|
-      line = line.rstrip
+      line = line.strip
 
       if line.include?("\r")
         latest_progress = line.split("\r").last.strip
         output = label ? "#{label} - #{latest_progress}" : latest_progress
+        max_line_length = [max_line_length, output.length].max
 
-        print "\r#{output.ljust(terminal_width)}"
+        print "\r#{output.ljust(max_line_length)}"
         $stdout.flush
       else
         puts line
@@ -57,18 +59,9 @@ def git_with_progress(*args, label: nil)
     end
   end
 
+  # Clear the final progress line after finishing
   puts
   return latest_progress
-end
-
-# Helper for clearing previous characters if new line is shorter
-def terminal_width
-  @terminal_width ||= begin
-    require 'io/console'
-    IO.console.winsize[1]
-  rescue
-    80
-  end
 end
 
 def update_remotes
