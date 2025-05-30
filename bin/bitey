@@ -81,7 +81,6 @@ def run_cmd(command)
     exit code
   end
 end
-
 def git_with_progress(*args, label: nil)
   latest_progress = ""
   max_line_length = 0
@@ -90,17 +89,21 @@ def git_with_progress(*args, label: nil)
 
   begin
     PTY.spawn("git #{git_args.join(' ')}") do |stdout, _stdin, pid|
-      stdout.each do |line|
-        line = line.strip
-        latest_progress = line.include?("\r") ? line.split("\r").last.strip : line
+      begin
+        stdout.each do |line|
+          line = line.strip
+          latest_progress = line.include?("\r") ? line.split("\r").last.strip : line
 
-        left  = label ? "#{label}..." : spin
-        right = "🐾 #{latest_progress}"
-        output = "#{left} | #{right}"
-        max_line_length = [max_line_length, output.length].max
+          left  = label ? "#{label}..." : spin
+          right = "🐾 #{latest_progress}"
+          output = "#{left} | #{right}"
+          max_line_length = [max_line_length, output.length].max
 
-        print "\r#{' ' * max_line_length}\r#{output}"
-        $stdout.flush
+          print "\r#{' ' * max_line_length}\r#{output}"
+          $stdout.flush
+        end
+      rescue Errno::EIO
+        # PTY buffer likely closed, child exited – safe to ignore if clone succeeded
       end
     end
   rescue PTY::ChildExited
@@ -110,6 +113,7 @@ def git_with_progress(*args, label: nil)
   puts ""
   latest_progress
 end
+
 
 def update_remotes
   puts "🦴 Updating Remotes..."
