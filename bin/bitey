@@ -104,7 +104,7 @@ def git_with_progress(*args, label: nil)
       left  = label ? "#{label}... #{spin}" : spin
       right = "🐾 #{latest_progress}"
 
-      output = "#{left.ljust(40)}#{right}"
+      output = "#{left.ljust(80)}#{right}"
       max_line_length = [max_line_length, output.length].max
 
       print "\r#{' ' * max_line_length}\r#{output}"  # clear + print
