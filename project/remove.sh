@@ -7,6 +7,10 @@ read choice
 if [[ "${choice,,}" == "y" ]]; then
     echo "🐶 Goodbye you, and $(hostname) too!!!"
     exit 0
+elif [[ "${choice,,}" == "woof" ]]; then
+    echo "🐶 Woof! Not a valid choice, but I appreciate the spirit."
+    echo "🐶 I'm just gonna cancel..."
+    exit 10
 else
     echo "🐶 Removal cancelled."
     exit 10
