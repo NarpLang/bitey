@@ -159,6 +159,7 @@ def install(remote_name, *args)
   end
 
   puts "🦴 Making changes to the system..."
+  installed = []
   packages.each_with_index do |package, idx|
     remote_addon = File.join(BITEY_DIR, 'software', "remote-#{remote_name}")
     remote_script = File.join(remote_addon, 'remote.sh')
@@ -203,9 +204,9 @@ def install(remote_name, *args)
 
       File.open(PATHS_FILE, 'a') { |f| f.puts install_path }
       File.open(RC_FILE, 'a') { |f| f.puts File.join(install_path, 'bin') }
+      installed << package
     end
-
-    puts "\n✅ Bitzy installed #{package}."
+    puts "✅ Bitzy installed #{installed.join(', ')}." unless installed.empty?
   end
 
   unlock
