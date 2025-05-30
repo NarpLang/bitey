@@ -7,6 +7,6 @@ sudo git clone https://github.com/NarpTools/remote-dev.git /usr/bitey/software/r
 sudo git clone https://github.com/NarpPorts/remote-ports.git /usr/bitey/software/remote-ports
 sudo chmod +x /usr/bitey/bin/*
 sudo ln -sf /usr/bitey/bin/bitey /usr/bin/bitey
-sudo /usr/bin/bitey install main biteydb
+sudo /usr/bin/bitey install main biteydb --noconfirm
 echo "🎉 Bitey is now installed!"
 exit 0
