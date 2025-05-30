@@ -34,19 +34,27 @@ def run_cmd(command)
   end
 end
 
-def run_git_with_progress(cmd, label)
-  IO.popen(cmd + ' 2>&1') do |io|
+def git_with_progress(*args, label: nil)
+  latest_progress = ""
+
+  # Insert '--progress' just before the last argument (e.g., the path)
+  git_args = args.dup
+  git_args.insert(-2, '--progress') if git_args.size >= 2
+
+  IO.popen(['git', *git_args], err: [:child, :out]) do |io|
     io.each do |line|
-      if line =~ /Receiving objects:\s+(\d+)%/
-        percent = $1.to_i
-        bar = "=" * (percent / 10) + " " * (10 - percent / 10)
-        progress = "#{percent}% [#{bar}]"
-        print "#{label}".ljust(80 - progress.length) + progress + "\r"
+      if line.include?("\r")
+        latest_progress = line.strip
+        print "\r#{label} → #{latest_progress}" if label
+        print "\r#{latest_progress}" unless label
         $stdout.flush
+      else
+        puts line
       end
     end
   end
-  puts
+
+  return latest_progress
 end
 
 def update_remotes
@@ -131,7 +139,7 @@ def install(remote_name, *packages)
     end
 
     label = "📦 [#{idx + 1}/#{packages.size}] Installing #{package}"
-    run_git_with_progress("git clone --progress #{remote}/#{package} #{install_path}", label)
+    git_with_progress("clone", "#{remote}/#{package}", "#{install_path}", label)
     $stdout.flush
 
     Dir.chdir(install_path) do
@@ -139,7 +147,9 @@ def install(remote_name, *packages)
         deps = File.readlines("project/depends.txt").map(&:strip).reject(&:empty?)
         deps.each do |dep|
           puts "\n📦 Installing dependency #{dep}..."
+          unlock
           run_cmd("sudo bitey install #{dep}")
+          lock
         end
       end
 
