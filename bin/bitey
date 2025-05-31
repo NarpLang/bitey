@@ -236,8 +236,10 @@ end
 
 
 def remove(*packages)
+  noconfirm = args.delete("--noconfirm")
+  noconfirm ||= args.delete("-y")
   locksmith
-
+  unless noconfirm
   puts "ℹ️ You are about to make changes in the system.\n\n🗑️ Removing:"
   packages.each { |pkg| puts "  - #{pkg}" }
 
@@ -247,6 +249,7 @@ def remove(*packages)
     puts "❌ Cancelled."
     unlock
     return
+  end
   end
 
   packages.each_with_index do |software, idx|
