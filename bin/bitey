@@ -235,9 +235,11 @@ def install(remote_name, *args)
 end
 
 
-def remove(*packages)
+def remove(*args)
   noconfirm = args.delete("--noconfirm")
   noconfirm ||= args.delete("-y")
+
+  packages = args
   locksmith
   unless noconfirm
   puts "ℹ️ You are about to make changes in the system.\n\n🗑️ Removing:"
